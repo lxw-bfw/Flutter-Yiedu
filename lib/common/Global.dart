@@ -5,6 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projectpractice/models/user.dart';
 
+
+/**
+ * *这个文件的重要性就在于是app 整个数据初始化的一个入口文件，每一次打开app都会初始化这里，获取一些全局变量的信息
+ * *或者是一些持久化的信息：比如用户的一些个人信息是需要持久化的，我们从缓冲获取到这些信息，对于登录标识的话也是怎么获取
+ * * 判断缓存是否存在，如果不存在的话我们就重新获取，还有对于某些信息需要在跨多个组件，甚至是整个app的所有页面都需要使用它
+ * * 所以我们还需要使用provide来实现跨组件的数据状态共享
+ * * 其中登录的标识我们怎么来：登录后后天返回一个user json数据对应我们fultter 工程的 UserInfo实体类，
+ * * 如果这个实体类不是null的话就代表当前用户是登录的。
+ */
+
+/**
+ * * 总结使用：全局变量、数据持久化、provider跨组件共享。
+ */
+
 /**
  * app全局变量或状态管理：比如app一次登录，是创建一个User单例，贯穿整个app的生命周期，其中user单例是保存再global里面。
  * app启动之前需要进行全局变量的初始化和判断。此外user是进行数据持久化的，所以获取是从持久化数据里面获取

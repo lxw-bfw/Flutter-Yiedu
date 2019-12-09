@@ -25,15 +25,15 @@ class MyApp extends StatelessWidget {
     // 获取User信息状态管理UserModel类
     UserModel userModel = Provider.of<UserModel>(context);
     // 获取用户的主题设置，如果为null就设置默认值。下次通过UserMOdel更改之后重新绘制这里
-    Color curTheme = userModel.user.theme ?? Colors.blue;
+    Color curTheme = userModel.user.theme==null?  Colors.blue : Color(userModel.user.theme);
     Brightness curBrightness =
-        userModel.user.brightnessStyle ?? Brightness.light;
+        userModel.user.brightnessStyle!=null ? userModel.user.brightnessStyle=='dark'? Brightness.dark : Brightness.light : Brightness.light ;
     return MaterialApp(
       title: '易教育',
       //!全局配置导航栏主题：主题更新需要。
       theme: ThemeData(
         brightness: curBrightness, //指定亮度主题，有白色/黑色两种可选.:夜间模式与白天模式的切换,默认是白天模式
-        primarySwatch: curTheme, // 状态栏颜色可以选择改变，状态管理
+        primaryColor:curTheme, // 状态栏颜色可以选择改变，状态管理
       ),
       home: FramePage(),
     );
@@ -142,18 +142,19 @@ class _FramePageState extends State<FramePage>
         type: BottomNavigationBarType
             .fixed, //底部导航栏的类型，有fixed和shifting两个类型，显示效果不一样，使用fixed默认图标会显示对应状态颜色比如没有选择或者是选择
         currentIndex: _selectIndex,
-        fixedColor: Provider.of<UserModel>(context).user.theme,
+        fixedColor:Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme),
         onTap: _onItemTapped,
       ),
       body: PageView(controller: _controller, children: _pages),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.palette),
+        backgroundColor:Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme),
         onPressed: () {
           //TODO:弹出菜单(测试)，建议是跳转路由页面，跳转到一个选择主题颜色页面
           List<Color> selectColrs = Global.themes;
           List<Widget> options = [];
           UserModel userModel = Provider.of<UserModel>(context);
-          Color curTheme1 = userModel.user.theme ?? Colors.blue;
+          Color curTheme1 = Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme);
           for (var i = 0; i < selectColrs.length; i++) {
             var sl = new SimpleDialogOption(
               child: ListTile(
@@ -169,9 +170,11 @@ class _FramePageState extends State<FramePage>
               onPressed: () {
                 // options[i].
                 //选择主题颜色，通知userModel更新：
+                var colors = [0xffe91e63,0xff2196f3,0xff00bcd4,0xffffc107,0xff4caf50,0xffcddc39];
+
                 print(selectColrs[i]);
                 User user1 = Global.user;
-                user1.theme = selectColrs[i];
+                user1.theme = colors[i];
                 userModel.changeUserInfo(user1);
                 //TODO:调用Global saveUser持久化用户信息
                 Navigator.of(context).pop();

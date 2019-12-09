@@ -26,6 +26,8 @@ class _PersonPageState extends State<PersonPage>
 
   @override
   Widget build(BuildContext context) {
+    //判断是的登录
+    UserModel userModel = Provider.of<UserModel>(context);
     //这就是一个新的页面虽然不会覆盖状态栏，但是你可以根据自己的需要定制页面。
     return Scaffold(
       body: Column(
@@ -214,10 +216,10 @@ class _PersonPageState extends State<PersonPage>
                                     _switchSelected = value;
                                   });
                                   if (_switchSelected) {
-                                    user1.brightnessStyle = Brightness.dark;
+                                    user1.brightnessStyle = 'dark';
                                     userModel.changeUserInfo(user1);
                                   } else {
-                                    user1.brightnessStyle = Brightness.light;
+                                    user1.brightnessStyle = 'light';
                                     userModel.changeUserInfo(user1);
                                   }
                                   //TODO:调用Global saveUser持久化用户信息
@@ -256,7 +258,7 @@ class _PersonPageState extends State<PersonPage>
                     }));
                   },
                   child: Text(
-                    '退出登录',
+                   userModel.isLogin? '退出登录':'点击登录',
                     style: TextStyle(
                         color: Color.fromRGBO(212, 48, 48, 1.0),
                         fontSize: 18.0,

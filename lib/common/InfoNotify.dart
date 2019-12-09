@@ -11,18 +11,19 @@ import 'package:provider/provider.dart';
 
 // 用户以及用户登录信息：登录用户信息的共享。
 class UserModel with ChangeNotifier {
-  // user单例：登录用户信息,生命为私有属性
+  // user单例：登录用户信息,userInfo，还有主题字段
    User _user = Global.user;
 
    //访问器属性:本身是一个方法
    User get user => _user;
   
-  //登录标识
-   bool get isLogin => _user != null;
+  //!登录标识,登录成功之后获取到userInof，如果为null就是没有登录
+   bool get isLogin => _user.userInfo != null;
 
-   //修改用户信息，触发重新更新wiget
+   //!修改用户信息，触发重新更新wiget，修改user单例里面的所有字段。就要触发更新和数据持久化
    void changeUserInfo(User user){
       Global.user = user;
+      // Global.saveUser();
       _user = user;
       notifyListeners();
    }
