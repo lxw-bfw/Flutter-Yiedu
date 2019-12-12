@@ -13,7 +13,7 @@ class UserInfo {
     String stupassword;
     String stusex;
     num stuage;
-    String birthday;
+    num birthday;
     String role;
     String phone;
     String email;
@@ -21,7 +21,7 @@ class UserInfo {
     num registertime;
     String address;
     String stuintroduce;
-    String integral;
+    num integral;
     num state;
     
     factory UserInfo.fromJson(Map<String,dynamic> json) => _$UserInfoFromJson(json);

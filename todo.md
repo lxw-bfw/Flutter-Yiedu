@@ -4,7 +4,7 @@
  * @Author: lxw
  * @Date: 2019-11-22 09:54:43
  * @LastEditors: lxw
- * @LastEditTime: 2019-12-09 16:03:46
+ * @LastEditTime: 2019-12-11 17:21:32
  -->
 <!-- TODO: -->
 <!-- 1. 页面架构：必须搞完。 -->
@@ -15,4 +15,9 @@
 5. 保存一些代码
 >  Color theme;
 >    Brightness brightnessStyle;//用户指定app的亮度模式：夜间、白天
+
+
+问题记录：
+1. 暂时不做持久化了，不方便演示，如果需要持久化的话，把那句注释去掉就行了。
+2. 根据课程id获取课程没有做分页。
 

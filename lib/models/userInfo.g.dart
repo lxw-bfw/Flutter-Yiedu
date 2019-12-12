@@ -15,7 +15,7 @@ UserInfo _$UserInfoFromJson(Map<String, dynamic> json) {
     ..stupassword = json['stupassword'] as String
     ..stusex = json['stusex'] as String
     ..stuage = json['stuage'] as num
-    ..birthday = json['birthday'] as String
+    ..birthday = json['birthday'] as num
     ..role = json['role'] as String
     ..phone = json['phone'] as String
     ..email = json['email'] as String
@@ -23,7 +23,7 @@ UserInfo _$UserInfoFromJson(Map<String, dynamic> json) {
     ..registertime = json['registertime'] as num
     ..address = json['address'] as String
     ..stuintroduce = json['stuintroduce'] as String
-    ..integral = json['integral'] as String
+    ..integral = json['integral'] as num
     ..state = json['state'] as num;
 }
 

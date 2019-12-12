@@ -29,6 +29,7 @@ dependencies:
   flutter_swiper: ^1.0.6
   fijkplayer: ^0.2.2 
   image_picker: ^0.6.0+9
+  dio: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -91,6 +92,9 @@ flutter:
      - images/bg4.jpg
      - images/infotip.jpg
      - images/gift.png
+     - images/unloginbg1.jpg
+     - images/man.png
+     - images/bg111.jpg
        
      
 

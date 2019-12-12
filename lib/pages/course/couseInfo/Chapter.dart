@@ -1,10 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:projectpractice/widget/LoadResultInfo.dart';
 
 class Chapter extends StatefulWidget {
-  Chapter({Key key, this.id}) : super(key: key);
+  Chapter({Key key, this.id, this.videoInfo,this.changeVideo}) : super(key: key);
   final int id;
+  final String videoInfo;
+  //由于接收父组件传过来的方法，然后直接通过widget.xxx('传回的参数')即调用父级组件的xx方法
+  final changeVideo;
   @override
   _ChapterState createState() => _ChapterState();
 }
@@ -16,20 +20,41 @@ class _ChapterState extends State<Chapter> {
       GlobalKey<RefreshIndicatorState>();
   //创建滚动监听控制器，赋值给可滚动的组件controle属性就可以监听滚动了
   ScrollController _scrollController = new ScrollController();
+
   // 数据源
+  var videoInfoMap;
+
   List<ChapterConten> _dataSource = List<ChapterConten>();
   // 当前加载的页数
   int _pageSize = 0;
 
   //!加载数据：一次性获取全部
   void _loadData(int index) {
-    var charpter =
-        '[{"isParentTitle":true,"title":"课程介绍相关"},{"isParentTitle":false,"title":"1-1 课程相关技术分享"},{"isParentTitle":false,"title":"1-2 课程开发环境搭建"},{"isParentTitle":false,"title":"1-3 课程开发环境搭建"},{"isParentTitle":false,"title":"1-4 课程开发环境搭建"},{"isParentTitle":false,"title":"1-5 课程开发环境搭建"}]';
-    List items = json.decode(charpter);
+    videoInfoMap = json.decode(widget.videoInfo);
+    var charpter;
+    if (videoInfoMap.length == 0) {
+      charpter = [
+        {'isParentTitle': true, 'title': '课程视频', 'vurl': ''}
+      ];
+    } else {
+      //TODO:
+      charpter = [
+        {'isParentTitle': true, 'title': '课程视频', 'vurl': ''}
+      ];
+      for (var i = 0; i < videoInfoMap.length; i++) {
+        charpter.add({
+          'isParentTitle': false,
+          'title': videoInfoMap[i]['title'],
+          'vurl': videoInfoMap[i]['vurl']
+        });
+      }
+    }
+    List items = charpter;
     for (var i = 0; i < items.length; i++) {
       var d = new ChapterConten();
       d.isParentTitle = items[i]["isParentTitle"];
       d.title = items[i]["title"];
+      d.vurl = items[i]["vurl"];
       _dataSource.add(d);
     }
   }
@@ -91,8 +116,7 @@ class _ChapterState extends State<Chapter> {
       child: ListView.builder(
           shrinkWrap: true,
           physics: new AlwaysScrollableScrollPhysics(),
-          itemCount: _dataSource.isEmpty ? 0 : _dataSource.length,
-          itemExtent: 50.0, //强制高度为50.0
+          itemCount: _dataSource.length == 1 ? 1 : _dataSource.length,
           itemBuilder: (BuildContext context, int index) {
             return items(context, index);
           }),
@@ -100,36 +124,61 @@ class _ChapterState extends State<Chapter> {
   }
 
   Widget items(context, index) {
-    if (index == _dataSource.length) {
-      return IntrinsicHeight(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 4.0,
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-                  child: Text('加载中...', style: TextStyle(fontSize: 16.0)),
-                )
-              ],
+    if (_dataSource.length == 1) {
+      return Column(
+        children: <Widget>[
+          Container(
+              height: 40,
+              child: getRow(_dataSource[index].isParentTitle, index)),
+          Container(
+            child: Center(
+              child: LoadResultInfo(
+                info: '空空如也...',
+              ),
             ),
-          ),
-        ),
+          )
+        ],
       );
     }
+
+    // } if (index == _dataSource.length) {
+    //   return IntrinsicHeight(
+    //     child: Center(
+    //       child: Padding(
+    //         padding: EdgeInsets.all(10.0),
+    //         child: Row(
+    //           mainAxisAlignment: MainAxisAlignment.center,
+    //           crossAxisAlignment: CrossAxisAlignment.center,
+    //           children: <Widget>[
+    //             SizedBox(
+    //               width: 20,
+    //               height: 20,
+    //               child: CircularProgressIndicator(
+    //                 strokeWidth: 4.0,
+    //               ),
+    //             ),
+    //             Padding(
+    //               padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+    //               child: Text('加载中...', style: TextStyle(fontSize: 16.0)),
+    //             )
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
     // 章节列表:每一行一个课程item：固定高度
     return IntrinsicHeight(
       child: Container(
-          height: 40, child: getRow(_dataSource[index].isParentTitle, index)),
+          height: 40, child:GestureDetector(
+            onTap: (){
+              print(_dataSource[index].vurl);
+              //调用父级组件方法，通知父级组件要播放的视频地址
+              widget.changeVideo(_dataSource[index].vurl,index);
+              //点击之后通过回调函数的通知父组件：视频播放页面播放对应的视频。
+            },
+            child: getRow(_dataSource[index].isParentTitle, index),
+          )),
     );
   }
 
@@ -140,7 +189,13 @@ class _ChapterState extends State<Chapter> {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.only(left: 10.0),
-            child: Text(_dataSource[index].title,style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 16.0),),
+            child: Text(
+              _dataSource[index].title,
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0),
+            ),
           )
         ],
       );
@@ -149,11 +204,18 @@ class _ChapterState extends State<Chapter> {
         padding: const EdgeInsets.only(left: 20.0),
         child: Row(
           children: <Widget>[
-             Padding(
-               padding: const EdgeInsets.only(right: 8.0),
-               child:  Icon(Icons.play_circle_filled,color: Colors.grey,size: 20.0,),
-             ),
-            Text(_dataSource[index].title,style: TextStyle(color: Colors.grey),)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Icon(
+                Icons.play_circle_filled,
+                color: Colors.grey,
+                size: 20.0,
+              ),
+            ),
+            Text(
+              _dataSource[index].title,
+              style: TextStyle(color: Colors.grey),
+            )
           ],
         ),
       );
@@ -165,4 +227,5 @@ class _ChapterState extends State<Chapter> {
 class ChapterConten {
   bool isParentTitle;
   String title;
+  String vurl;
 }

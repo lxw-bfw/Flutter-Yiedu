@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Global.dart';
+import 'package:projectpractice/common/Http.dart';
+import 'package:projectpractice/common/InfoNotify.dart';
+import 'package:projectpractice/main.dart';
+import 'package:projectpractice/models/index.dart';
+import 'package:projectpractice/models/user.dart';
 import 'package:projectpractice/pages/login/SetPassword.dart';
 import 'package:projectpractice/pages/login/LoginByMessage.dart';
+import 'package:projectpractice/pages/tabView/HomePage.dart';
+import 'package:projectpractice/widget/Loading.dart';
+import 'package:provider/provider.dart';
 
 class LoginByPhone extends StatefulWidget {
-  LoginByPhone({Key key}) : super(key: key);
+  LoginByPhone({Key key, this.ph, this.pass}) : super(key: key);
 
+  String ph;
+  String pass;
 // 管理此widget状态和界面的State实例
   @override
   LoginByPhoneState createState() => LoginByPhoneState();
@@ -18,21 +29,93 @@ class LoginByPhoneState extends State<LoginByPhone> {
 
   //通过全局的key用来获取form表单组件
   GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
+  var _scaffoldkey = new GlobalKey<ScaffoldState>();
 
   //手机号
-  String Phone;
+  String Phone = "13715075923";
 
   //密码
-  String password;
+  String password = "123456";
+
+  //登录加载...
+  bool isLoading = false;
 
   //点击登录按钮
   void login() {
+    setState(() {
+      isLoading = true;
+    });
     //读取当前的form状态
     var _form = _formKey.currentState;
     if (_form.validate()) {
       _form.save();
       print(Phone);
       print(password);
+      //登录
+      Http.getData(
+          '/login/stu/goLogin',
+          (data) {
+            //请求成功
+            var easyInfo = data['data'];
+            var id = easyInfo['id'];
+            //!通过id查找用户信息，获取用户信息，使用状态管理一级持久化更新
+            Http.getData(
+                '/student/selectByPhone',
+                (data) {
+                  setState(() {
+                    isLoading = false;
+                  });
+
+                  //!使用Json Model化，获取到的个人信息json字符串对应工程的一个UserInfo信息，我们需要把json字符串转为UserInfo
+                  var uInfo = data['data'];
+                  print(uInfo);
+                  var userInfo1 =  new UserInfo.fromJson(uInfo);
+                  print(userInfo1.petname);
+                  // 获取用户信息持久化用户信息以及更新用户登录状态
+                  // 获取注册了provider状态管理的userModel实例，里面每次修改信息都调用了信息持久化方法
+                  UserModel userModel = Provider.of<UserModel>(context);
+                  User user = Global.user;
+                  //保存持久化当当前登录的用户信息，并且进行持久化
+                  user.userInfo = userInfo1;
+                  userModel.changeUserInfo(user);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return FramePage();
+                  }));
+                },
+                params: {'phone': id},
+                errorCallBack: (error) {
+                  print(error);
+                  if (error !=
+                      "type '_InternalLinkedHashMap<String, dynamic>' is not a subtype of type 'String'" && error !="type 'int' is not a subtype of type 'String' in type cast") {
+                    var snackBar = SnackBar(
+                      content: Text('登录失败，请检查后重新登录'),
+                      action: SnackBarAction(
+                        label: "重新登录",
+                        onPressed: () {
+                          login();
+                        },
+                      ),
+                    );
+                    _scaffoldkey.currentState.showSnackBar(snackBar);
+                  }
+                });
+          },
+          params: {'phone': Phone, 'password': password},
+          errorCallBack: (error) {
+            if (error !=
+                "type '_InternalLinkedHashMap<String, dynamic>' is not a subtype of type 'String'") {
+              var snackBar = SnackBar(
+                content: Text('登录失败，请检查后重新登录'),
+                action: SnackBarAction(
+                  label: "重新登录",
+                  onPressed: () {
+                    login();
+                  },
+                ),
+              );
+              _scaffoldkey.currentState.showSnackBar(snackBar);
+            }
+          });
     }
   }
 
@@ -40,6 +123,7 @@ class LoginByPhoneState extends State<LoginByPhone> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: _scaffoldkey,
         appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.black),
           backgroundColor: Colors.white,
@@ -59,6 +143,14 @@ class LoginByPhoneState extends State<LoginByPhone> {
               child: Column(
                 children: <Widget>[
                   TextFormField(
+                    controller: TextEditingController.fromValue(
+                        TextEditingValue(
+                            text: widget.ph == null ? '13715075923' : widget.ph,
+                            selection: TextSelection.fromPosition(TextPosition(
+                                affinity: TextAffinity.downstream,
+                                offset: widget.ph == null
+                                    ? 0
+                                    : widget.ph.length)))),
                     autofocus: true,
                     decoration: InputDecoration(
                         labelStyle: TextStyle(
@@ -81,6 +173,14 @@ class LoginByPhoneState extends State<LoginByPhone> {
                     },
                   ),
                   TextFormField(
+                    controller: TextEditingController.fromValue(
+                        TextEditingValue(
+                            text: widget.pass == null ? '123456' : widget.pass,
+                            selection: TextSelection.fromPosition(TextPosition(
+                                affinity: TextAffinity.downstream,
+                                offset: widget.pass == null
+                                    ? 0
+                                    : widget.pass.length)))),
                     decoration: InputDecoration(
                         labelStyle: TextStyle(
                           color: Color.fromRGBO(51, 177, 123, 1.0),
@@ -124,8 +224,9 @@ class LoginByPhoneState extends State<LoginByPhone> {
                     children: <Widget>[
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) {
-                          return SetPassword();
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            return SetPassword();
                           }));
                         },
                         child: Text(
@@ -137,8 +238,9 @@ class LoginByPhoneState extends State<LoginByPhone> {
                       ),
                       GestureDetector(
                         onTap: () {
-                           Navigator.push(context, MaterialPageRoute(builder: (context) {
-                             return LoginByMessage();
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            return LoginByMessage();
                           }));
                         },
                         child: Text(
@@ -149,6 +251,14 @@ class LoginByPhoneState extends State<LoginByPhone> {
                         ),
                       )
                     ],
+                  ),
+                  Container(
+                    alignment: Alignment.center,
+                    child: isLoading
+                        ? Loading(
+                            text: '登录中...',
+                          )
+                        : Text(''),
                   )
                 ],
               ),

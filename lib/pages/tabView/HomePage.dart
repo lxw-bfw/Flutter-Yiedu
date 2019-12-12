@@ -1,5 +1,8 @@
+import 'dart:math' as prefix0;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:projectpractice/common/Http.dart';
 import 'package:projectpractice/widget/Goodsbox.dart';
 import 'package:projectpractice/widget/GradientBox.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
@@ -18,40 +21,38 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   //创建滚动监听控制器，赋值给可滚动的组件controle属性就可以监听滚动了
   ScrollController _scrollController = new ScrollController();
+  GlobalKey<RefreshIndicatorState> _refreshKey =
+      GlobalKey<RefreshIndicatorState>();
 
-  //TODO:轮播需要的图image widget
+  //TODO:轮播需要的图image widget，这里每一张轮播都对应一个课程，轮播图片使用课程里面的img
   List<Widget> imageList = List();
   //需要的图片数据
   List<String> imgData = List();
 
+  //! 首页后去两个信息：精选一、首页推荐课程
+  var varys1 = [];
+  var course = [];
+
   @override
   void initState() {
+    for (var i = 0; i < 8; i++) {
+      varys1.add({'kindName': '获取中...'});
+    }
+    for (var i = 0; i < 4; i++) {
+      course.add({
+        'cname': '获取中...',
+        'img': 'http://placehold.it/400x200?text=course...',
+        'price': 1888.0
+      });
+    }
+    //下拉刷新
+    showRefreshLoading();
     //获取轮播图片数据
-    imgData.add(
-        'https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=2726034926,4129010873&fm=26&gp=0.jpg');
-    imgData.add(
-        'https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=3485348007,2192172119&fm=26&gp=0.jpg');
-    imgData.add(
-        'https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=2594792439,969125047&fm=26&gp=0.jpg');
-    imgData.add(
-        'https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=190488632,3936347730&fm=26&gp=0.jpg');
-    imageList
-      ..add(Image.network(
-        'https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=2726034926,4129010873&fm=26&gp=0.jpg',
-        fit: BoxFit.fill,
-      ))
-      ..add(Image.network(
-        'https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=3485348007,2192172119&fm=26&gp=0.jpg',
-        fit: BoxFit.fill,
-      ))
-      ..add(Image.network(
-        'https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=2594792439,969125047&fm=26&gp=0.jpg',
-        fit: BoxFit.fill,
-      ))
-      ..add(Image.network(
-        'https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=190488632,3936347730&fm=26&gp=0.jpg',
-        fit: BoxFit.fill,
-      ));
+    imgData.add('http://placehold.it/400x200?text=course...');
+    imgData.add('http://placehold.it/400x200?text=course...');
+    imgData.add('http://placehold.it/400x200?text=course...');
+    imgData.add('http://placehold.it/400x200?text=course...');
+    
 
     super.initState();
 
@@ -67,6 +68,81 @@ class _HomePageState extends State<HomePage> {
     // _generateData();
   }
 
+  //随机获取8个课程二级类别
+  getVarys() {
+    Http.getData(
+        '/kindInfo/getHigherLevel',
+        (data) {
+          //在count的范围之内随机获取到8个，如果不足8个的话就遍历count有些重复
+          print(data['count']);
+          var randomNum = []; //记录不同的随机数
+          if (data['count'] >= 8) {
+            for (var i = 0; i < 8; i++) {
+              var num = prefix0.Random().nextInt(data['count']);
+              if (randomNum.length != 0) {
+                for (var j = 0; j < randomNum.length; j++) {
+                  while (randomNum[j] == num) {
+                    num = prefix0.Random().nextInt(data['count']);
+                  }
+                }
+              }
+              randomNum.add(num);
+            }
+            print(randomNum);
+          } else {
+            //如果是小于8个的话，我们从这里还是去8次随机数，只是有重复的
+            for (var i = 0; i < 8; i++) {
+              var num = prefix0.Random().nextInt(data['count']);
+              randomNum.add(num);
+            }
+          }
+          //把随机对用的数据放置进list里面再触发组件重新渲染。
+          varys1 = [];
+          for (var i = 0; i < randomNum.length; i++) {
+            varys1.add(data['data'][randomNum[i]]);
+          }
+          setState(() {});
+        },
+        params: {'level': 3, 'pageNum': 1, 'pageSize': 1000},
+        errorCallBack: (error) {
+          print('error:$error');
+        });
+  }
+
+  //获取推荐课程需要分页：换一批
+  int pageNum = 1;
+  int pageSize = 4;
+  int totalPage = 1; //总页数,需要获取后台数据后进行渲染
+  var carousIds = [];//记录轮播课程的课程id
+  getRecommendCourse() {
+    Http.getData(
+        '/crouseInfo/selectAll',
+        (data) {
+          //分页总数
+          totalPage = data['count'] ~/ 4;
+          print(data);
+          imgData = [];
+          for (var i = 0; i < data['data'].length; i++) {
+            if (data['data'][i]['img'] == null) {
+              data['data'][i]['img'] =
+                  'http://placehold.it/400x200?text=course...';
+            } else {
+              if (imgData.length < 4) {
+                imgData.add(data['data'][i]['img']);
+                carousIds.add(data['data'][i]['cid']);
+              }
+            }
+          }
+          //下面的推荐课程列表渲染
+          course = data['data'];
+          setState(() {});
+        },
+        params: {'pageNum': pageNum, 'pageSize': pageSize},
+        errorCallBack: (error) {
+          print('error:$error');
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     //这就是一个新的页面虽然不会覆盖状态栏，但是你可以根据自己的需要定制页面。
@@ -77,6 +153,7 @@ class _HomePageState extends State<HomePage> {
       height: double.infinity,
       decoration: BoxDecoration(color: const Color(0xF2F6FCff)),
       child: RefreshIndicator(
+        key: _refreshKey,
         color: Theme.of(context).primaryColor, //定义上拉刷新circle组件的加载进度条颜色
         backgroundColor: Colors.white, // 定义上拉刷新circle组件的背景颜色
 
@@ -167,16 +244,24 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         // TODO:点击跳转到点击进入对应分类查询到课程列表页面
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) {
-                                        return CourseList(id: 0,);
+                                        //利用分类id获取课程
+                                        print('分类id是${varys1[0]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[0]['kid'],
+                                            cname:varys1[0]['kindName'],
+                                          );
                                         }));
                                       },
                                       child: Goodsbox(
                                         imgsrc: 'images/course-bg1.jpg',
                                         heigth: 65.0,
-                                        title: 'Java工程师',
+                                        title: varys1[0]['kindName'],
                                         introduce: '综合就业排名第一名',
                                         opc: 0.6,
+                                        imgType: 2,
                                       ),
                                     ))),
                             Expanded(
@@ -187,14 +272,23 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         // TODO:点击跳转到点击进入对应分类查询到课程列表页面
-                                        print(0);
+                                        print('分类id是${varys1[1]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[1]['kid'],
+                                            cname:varys1[1]['kindName'],
+                                          );
+                                        }));
                                       },
                                       child: Goodsbox(
                                         imgsrc: 'images/course-bg2.png',
                                         heigth: 65.0,
-                                        title: '前端工程师',
+                                        title: varys1[1]['kindName'],
                                         introduce: '小白也可以学好',
                                         opc: 0.6,
+                                         imgType: 2,
                                       ),
                                     ))),
                             Expanded(
@@ -205,14 +299,23 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         // TODO:点击跳转到点击进入对应分类查询到课程列表页面
-                                        print(0);
+                                        print('分类id是${varys1[2]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[2]['kid'],
+                                            cname:varys1[2]['kindName'],
+                                          );
+                                        }));
                                       },
                                       child: Goodsbox(
                                         imgsrc: 'images/course-bg3.png',
                                         heigth: 65.0,
-                                        title: 'Python工程师',
+                                        title: varys1[2]['kindName'],
                                         introduce: '应用最广泛的语言',
                                         opc: 0.6,
+                                         imgType: 2,
                                       ),
                                     )))
                           ],
@@ -230,14 +333,23 @@ class _HomePageState extends State<HomePage> {
                                       child: GestureDetector(
                                         onTap: () {
                                           // TODO:点击跳转到点击进入对应分类查询到课程列表页面
-                                          print(0);
+                                         print('分类id是${varys1[3]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[3]['kid'],
+                                            cname:varys1[3]['kindName'],
+                                          );
+                                        }));
                                         },
                                         child: Goodsbox(
                                           imgsrc: 'images/courser-bg6.png',
                                           heigth: 65.0,
-                                          title: 'Android工程师',
+                                          title: varys1[3]['kindName'],
                                           introduce: '移动市场份额第一',
                                           opc: 0.6,
+                                           imgType: 2,
                                         ),
                                       ))),
                               Expanded(
@@ -248,14 +360,23 @@ class _HomePageState extends State<HomePage> {
                                       child: GestureDetector(
                                         onTap: () {
                                           // TODO:点击跳转到点击进入对应分类查询到课程列表页面
-                                          print(0);
+                                          print('分类id是${varys1[4]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[4]['kid'],
+                                            cname:varys1[4]['kindName'],
+                                          );
+                                        }));
                                         },
                                         child: Goodsbox(
                                           imgsrc: 'images/courser-bg7.png',
                                           heigth: 65.0,
-                                          title: 'PHP攻城狮',
+                                          title: varys1[4]['kindName'],
                                           introduce: 'Web开发首选语言',
                                           opc: 0.6,
+                                          imgType: 2,
                                         ),
                                       ))),
                             ],
@@ -299,11 +420,19 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击跳转到课程列表页面
-                                        print(0);
+                                        print(0);print('分类id是${varys1[5]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[5]['kid'],
+                                            cname:varys1[5]['kindName'],
+                                          );
+                                        }));
                                       },
                                       child: GradientBox(
                                         heigth: 65.0,
-                                        title: 'Java全栈',
+                                        title: varys1[5]['kindName'],
                                         introduce: '从后端走向全栈',
                                         leftColor: Colors.lightBlueAccent,
                                         rightColor: Colors.blue,
@@ -317,11 +446,19 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击跳转到课程列表页面
-                                        print(0);
+                                        print(0);print('分类id是${varys1[6]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[6]['kid'],
+                                            cname:varys1[6]['kindName'],
+                                          );
+                                        }));
                                       },
                                       child: GradientBox(
                                         heigth: 65.0,
-                                        title: '大前端',
+                                        title: varys1[6]['kindName'],
                                         introduce: '前端高级进阶',
                                         leftColor: Colors.orangeAccent,
                                         rightColor: Colors.deepOrange,
@@ -335,11 +472,19 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击跳转到课程列表页面
-                                        print(0);
+                                       print('分类id是${varys1[7]['kid']}');
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseList(
+                                            id: varys1[7]['kid'],
+                                            cname:varys1[7]['kindName'],
+                                          );
+                                        }));
                                       },
                                       child: GradientBox(
                                         heigth: 65.0,
-                                        title: 'Java架构师',
+                                        title: varys1[7]['kindName'],
                                         introduce: '专家系统养成',
                                         leftColor: Colors.purpleAccent,
                                         rightColor: Colors.deepPurple,
@@ -385,17 +530,19 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击进入课程购买--介绍页面
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) {
-                                        return CourseDetail();
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseDetail();
                                         }));
                                         print(0);
                                       },
                                       child: CourseBox(
-                                        imgsrc: 'images/course2.jpg',
-                                        title: '跟简七学理财',
+                                        imgsrc: course[0]['img'],
+                                        title: course[0]['cname'],
                                         score: 4.5,
                                         studenNum: 10,
-                                        price: 398.0,
+                                        price: course[0]['price'],
                                       ),
                                     ))),
                             Expanded(
@@ -409,11 +556,11 @@ class _HomePageState extends State<HomePage> {
                                         print(0);
                                       },
                                       child: CourseBox(
-                                        imgsrc: 'images/course1.jpg',
-                                        title: '轻松手绘：用简笔画提升你的技巧',
+                                        imgsrc: course[1]['img'],
+                                        title: course[1]['cname'],
                                         score: 3.5,
                                         studenNum: 10,
-                                        price: 198.0,
+                                        price: course[1]['price'],
                                       ),
                                     ))),
                           ],
@@ -434,7 +581,8 @@ class _HomePageState extends State<HomePage> {
                                           print(0);
                                         },
                                         child: CourseBox(
-                                          imgsrc: 'images/course3.png',
+                                          imgsrc:
+                                              'http://placehold.it/400x200?text=course...',
                                           title: 'Java并发编程精讲',
                                           score: 4.5,
                                           studenNum: 10,
@@ -452,7 +600,8 @@ class _HomePageState extends State<HomePage> {
                                           print(0);
                                         },
                                         child: CourseBox(
-                                          imgsrc: 'images/course4.jpg',
+                                          imgsrc:
+                                              'http://placehold.it/400x200?text=course...',
                                           title: 'Java数据结构与算法',
                                           score: 3.5,
                                           studenNum: 10,
@@ -466,8 +615,13 @@ class _HomePageState extends State<HomePage> {
                             padding: EdgeInsets.only(top: 10.0),
                             child: GestureDetector(
                               onTap: () {
-                                //TODO:
-                                print(0);
+                                //TODO:换一批课程
+                                if (pageNum < totalPage) {
+                                  pageNum++;
+                                } else {
+                                  pageNum = 1;
+                                }
+                                getRecommendCourse();
                               },
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -511,10 +665,17 @@ class _HomePageState extends State<HomePage> {
   //TODO:触发下拉刷新，重新获取数据渲染
   Future<void> _onRefresh() async {
     print("RefreshListPage _onRefresh()");
-    await Future.delayed(Duration(seconds: 2), () {
-      // _list = List.generate(15, (i) => "我是刷新出的数据${i}");
-      print('触发下拉刷新');
-      // setState(() {});
+    print('触发下拉刷新');
+    pageNum = 1;
+    getVarys();
+    getRecommendCourse();
+  }
+
+  //页面inti的时候调用这个下拉刷新
+  showRefreshLoading() {
+    new Future.delayed(const Duration(seconds: 0), () {
+      _refreshKey.currentState.show().then((e) {});
+      return true;
     });
   }
 
@@ -604,7 +765,9 @@ class _HomePageState extends State<HomePage> {
         controller: SwiperController(),
         scrollDirection: Axis.horizontal,
         autoplay: true,
-        onTap: (index) => print('点击了第$index'),
+        onTap: (index){
+          print('课程id是${carousIds[index]}');
+        }
       ),
     );
   }

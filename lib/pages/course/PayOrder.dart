@@ -1,10 +1,20 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Http.dart';
 import 'package:projectpractice/widget/Goodsbox.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
 import 'package:projectpractice/pages/course/CourseVieo.dart';
 //确认订单页面
 
 class PayOrder extends StatefulWidget {
+
+  PayOrder({this.imgsrc,this.title,this.price,this.cid});
+  String imgsrc;
+  String title;
+  double price;
+  int cid;//课程id--获取课程视频需要
+
   @override
   _PayOrderState createState() => _PayOrderState();
 }
@@ -22,6 +32,13 @@ class _PayOrderState extends State<PayOrder> {
       duration: Duration(seconds: 2),
     );
     _scaffoldkey.currentState.showSnackBar(snackBar);
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    print(widget.imgsrc);
+    super.initState();
   }
 
   @override
@@ -91,8 +108,8 @@ class _PayOrderState extends State<PayOrder> {
                               Expanded(
                                 flex: 2,
                                 child: Goodsbox(
-                                  imgsrc: 'images/courselist-1.jpg',
-                                  heigth: 65.0,
+                                  imgsrc: widget.imgsrc,
+                                  heigth: 68.0,
                                   title: '',
                                   introduce: '',
                                   opc: 0.0,
@@ -111,7 +128,7 @@ class _PayOrderState extends State<PayOrder> {
                                         Wrap(
                                           children: <Widget>[
                                             Text(
-                                              'Java通用型支付+电商平台双系统高级开发工程师课程',
+                                              widget.title,
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
@@ -124,7 +141,7 @@ class _PayOrderState extends State<PayOrder> {
                                         Row(
                                           children: <Widget>[
                                             Text(
-                                              '￥1298',
+                                              '￥${widget.price}',
                                               style: TextStyle(
                                                   color: Color.fromRGBO(
                                                       212, 48, 48, 1.0),
@@ -182,7 +199,7 @@ class _PayOrderState extends State<PayOrder> {
                                   fontSize: 16.0),
                             ),
                             trailing: Text(
-                              '￥199.0',
+                              '￥${widget.price}',
                               style: TextStyle(
                                   color: Color.fromRGBO(212, 48, 48, 1.0),
                                   fontWeight: FontWeight.bold,
@@ -391,7 +408,7 @@ class _PayOrderState extends State<PayOrder> {
                                 style: TextStyle(
                                     color: Color.fromRGBO(86, 86, 86, 1.0))),
                             TextSpan(
-                                text: '￥266.0',
+                                text: '￥${widget.price}',
                                 style: TextStyle(
                                     color: Color.fromRGBO(234, 82, 53, 1.0),
                                     fontSize: 18.0))
@@ -410,9 +427,28 @@ class _PayOrderState extends State<PayOrder> {
                           child: GestureDetector(
                             onTap: () {
                               //点击跳转微信支付
-                              Navigator.push(context, MaterialPageRoute(builder: (context) {
-                              return CourseVideo(url: 'https://v-cdn.zjol.com.cn/276984.mp4',);
+                              //TODO:暂时做成，支付成功后，在这里根据cid获取到课程的视频这样
+                              Http.getData(
+                              '/videoInfo/selectByCid', 
+                              (data){
+                                print(json.encode(data['data']));
+                                var url;
+                                if (data['data'].length == 0) {
+                                  url = '';
+                                } else {
+                                   url = data['data'][0]['vurl'];
+                                }
+                                 Navigator.push(context, MaterialPageRoute(builder: (context) {
+                              return CourseVideo(url:url,vidoeInfo: json.encode(data['data'],),cid: widget.cid,);
                               }));
+                              },
+                              params: {'cid':widget.cid},
+                              errorCallBack: (error){
+                                print('error:$error');
+                              }
+                            );
+                            return;
+                             
                             },
                             child: Text(
                               '提交订单',

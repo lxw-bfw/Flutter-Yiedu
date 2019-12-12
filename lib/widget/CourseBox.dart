@@ -17,7 +17,7 @@ final double price;//价格
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Image(
-            image: AssetImage(imgsrc),
+            image: NetworkImage(imgsrc),
             height: 100.0,
             fit: BoxFit.cover,
           ),

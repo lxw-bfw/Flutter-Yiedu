@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:projectpractice/common/Http.dart';
+import 'package:projectpractice/pages/login/LoginByPhone.dart';
 
 //用户注册页面
 class Regist extends StatefulWidget {
@@ -17,8 +19,9 @@ class RegistState extends State<Regist> {
   //验证码倒计时数值
   var countdownTime = 0;
 
-   //通过全局的key用来获取form表单组件
+  //通过全局的key用来获取form表单组件
   GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
+  var _scaffoldkey = new GlobalKey<ScaffoldState>();
 
   //手机号
   String Phone;
@@ -30,48 +33,68 @@ class RegistState extends State<Regist> {
   String password;
 
   //倒计时方法
-  startCountdown(){
+  startCountdown() {
     countdownTime = 60;
-    final call = (timer){
+    final call = (timer) {
       setState(() {
-       if (countdownTime < 1) {
-         _timer.cancel();
-       } else {
-         countdownTime -=1;
-       }
+        if (countdownTime < 1) {
+          _timer.cancel();
+        } else {
+          countdownTime -= 1;
+        }
       });
-     
     };
-     _timer = Timer.periodic(Duration(seconds: 1),call);
+    _timer = Timer.periodic(Duration(seconds: 1), call);
   }
 
   //根据倒计时过程返回对应的文本内容
-  String handleCodeText(){
+  String handleCodeText() {
     if (countdownTime > 0) {
-      return '${countdownTime}s后重新获取';      
+      return '${countdownTime}s后重新获取';
     } else {
       return '获取验证码';
     }
   }
+
   //验证码文本位置的一个控制，倒计时结束与倒计时过程文本内容长度不一样
-  double getCodeTextMargin(){
+  double getCodeTextMargin() {
     if (countdownTime > 0) {
-      return 270.0;    
+      return 270.0;
     } else {
       return 300.0;
     }
   }
-  
- 
 
   //点击登录按钮
-  void login() {
+  void login(BuildContext context) {
     //读取当前的form状态
     var _form = _formKey.currentState;
     if (_form.validate()) {
       _form.save();
       print(Phone);
       print(password);
+      //调用注册接口
+      Http.postData(
+          '/student/insert',
+          (data) {
+            print(data);
+            var snackBar = SnackBar(
+              content: Text('注册成功，请前往登录'),
+              action: SnackBarAction(
+                label: "登录",
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return LoginByPhone(ph: Phone,pass: password,);
+                  }));
+                },
+              ),
+            );
+            _scaffoldkey.currentState.showSnackBar(snackBar);
+          },
+          params: {'phone': Phone, 'stupassword': password},
+          errorCallBack: (error) {
+            print(error);
+          });
     }
   }
 
@@ -79,6 +102,7 @@ class RegistState extends State<Regist> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: _scaffoldkey,
         appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.black),
           backgroundColor: Colors.white,
@@ -161,7 +185,8 @@ class RegistState extends State<Regist> {
                             }
                           },
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(getCodeTextMargin(), 30.0, 0.0, 0.0),
+                            padding: EdgeInsets.fromLTRB(
+                                getCodeTextMargin(), 30.0, 0.0, 0.0),
                             child: Text(
                               handleCodeText(),
                               style: TextStyle(
@@ -196,7 +221,14 @@ class RegistState extends State<Regist> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      login();
+                      login(context);
+                      print(111); //
+                      // Http.getData('/comment/selectByPrimaryKey', (data) {
+                      //   print(data);
+                      // },
+                      //     params: {'id': 1}, errorCallBack: (error) {
+                      //   print(error);
+                      // });
                     },
                     child: Container(
                       margin: EdgeInsets.fromLTRB(0.0, 18.0, 0.0, 10.0),

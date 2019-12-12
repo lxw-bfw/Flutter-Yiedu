@@ -1,12 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Http.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
 
 class CourseDetail extends StatefulWidget {
+ CourseDetail({Key key, this.cid}) : super(key: key);
+  final int cid;
   @override
   _CourseDetailState createState() => _CourseDetailState();
 }
 
 class _CourseDetailState extends State<CourseDetail> {
+ 
+ var infoMap ;
+
+ @override
+  void initState() {
+    // TODO: implement initState
+    infoMap = {
+      'cname' : '获取中...',
+      'crouseTime' : '获取中...',
+      'integral' : '获取中...',
+      'crouseIntroduce':'获取中...'
+    };
+    print(widget.cid);
+    getCourseByCid();
+    super.initState();
+  }
+  getCourseByCid() {
+    
+    Http.getData(
+        '/crouseInfo/selectByPrimaryKey',
+        (data) {
+          //获取到了数据后进行渲染
+          print(data);
+          if (data['data']['crouseTime']==null) {
+            data['data']['crouseTime'] = '暂无时长';
+          } else {
+            data['data']['crouseTime'] = '总时长${ data['data']['crouseTime']}';
+          }
+          if (data['data']['integral'] == null) {
+            data['data']['integral'] = '暂无积分值';
+          } else {
+            data['data']['integral'] = '学完本课程可获得积分${data['data']['integral']}';
+          }
+          if (data['data']['crouseIntroduce'] == null) {
+            data['data']['crouseIntroduce'] = '暂无简介';
+          } 
+          infoMap = data['data'];
+          setState(() {
+            
+          });
+          
+        },
+        params: {'cid':widget.cid},
+        errorCallBack: (error) {
+          print('error:$error');
+        });
+  }
+
+
+  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -29,7 +83,7 @@ class _CourseDetailState extends State<CourseDetail> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10.0, 20.0, 0.0, 0.0),
                     child: Text(
-                      '跟简七一起学理财',
+                      infoMap['cname'],
                       style: TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
@@ -62,7 +116,7 @@ class _CourseDetailState extends State<CourseDetail> {
                             Padding(
                               padding: const EdgeInsets.only(left: 20.0),
                               child: Text(
-                                '10人学过',
+                                infoMap['crouseTime'],
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -113,7 +167,7 @@ class _CourseDetailState extends State<CourseDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      '适用人群',
+                      '课程积分',
                       style: TextStyle(
                         color: Colors.grey,
                       ),
@@ -122,7 +176,7 @@ class _CourseDetailState extends State<CourseDetail> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 5.0, horizontal: 0.0),
                       child: Text(
-                        '零基础小白学理财，这门课就够了！',
+                        infoMap['integral'],
                         style: TextStyle(
                           color: Colors.grey,
                         ),
@@ -147,7 +201,7 @@ class _CourseDetailState extends State<CourseDetail> {
                     Wrap(
                       children: <Widget>[
                         Text(
-                          '这是课程简介' * 20,
+                          infoMap['crouseIntroduce'],
                           style: TextStyle(
                             color: Colors.grey,
                           ),

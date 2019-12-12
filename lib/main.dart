@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projectpractice/common/Global.dart';
 import 'package:projectpractice/common/InfoNotify.dart';
 import 'package:projectpractice/models/index.dart';
+import 'package:projectpractice/pages/tabView/UnLogin.dart';
 import 'package:provider/provider.dart';
 import 'package:projectpractice/pages/tabView/HomePage.dart';
 import 'package:projectpractice/pages/tabView/VaryPage.dart';
@@ -58,13 +59,23 @@ class _FramePageState extends State<FramePage>
     initialPage: 0,
   );
 
+ //登录展示的tabview
   List<Widget> _pages = [
     //添加需要显示的页面
     HomePage(),
     VaryPage(),
-    MyCourse(),
+    MyCourse(),//我的学习需要根据登录状态显示不同页面
     PersonPage(),
   ];
+  //未登录展示的tabview
+  List<Widget> _unLoginpages = [
+    //添加需要显示的页面
+    HomePage(),
+    VaryPage(),
+    UnLogin(),//我的学习需要根据登录状态显示不同页面
+    PersonPage(),
+  ];
+
 
   //state生命周期中的一个：做一些一次性操作，初始化什么的
   @override
@@ -75,6 +86,7 @@ class _FramePageState extends State<FramePage>
 // 构建ui界面，这里我需要对顶部导航栏appBar做一些自定义实现我们需要的搜索框还有...
   @override
   Widget build(BuildContext context) {
+      UserModel userModel = Provider.of<UserModel>(context);
     return Scaffold(
       appBar: PreferredSize(
         preferredSize:
@@ -145,7 +157,7 @@ class _FramePageState extends State<FramePage>
         fixedColor:Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme),
         onTap: _onItemTapped,
       ),
-      body: PageView(controller: _controller, children: _pages),
+      body: PageView(controller: _controller, children: userModel.isLogin? _pages:_unLoginpages),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.palette),
         backgroundColor:Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme),

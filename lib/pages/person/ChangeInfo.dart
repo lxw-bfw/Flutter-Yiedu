@@ -1,6 +1,10 @@
 //进入修改信息页面
 import 'package:flutter/material.dart';
-
+import 'package:projectpractice/common/Http.dart';
+import 'package:projectpractice/common/InfoNotify.dart';
+import 'package:projectpractice/models/userInfo.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert';
 class ChangeInfo extends StatefulWidget {
   ChangeInfo({this.id, this.info, this.vary});
 
@@ -14,17 +18,44 @@ class ChangeInfo extends StatefulWidget {
 class _ChangeInfoState extends State<ChangeInfo> {
   //通过全局的key用来获取form表单组件
   GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
+  var _scaffoldkey = new GlobalKey<ScaffoldState>();
 
   //修改的信息
   String info = '';
 
   //点击登录按钮
   void login() {
+    UserModel userModel = Provider.of<UserModel>(context);
     //读取当前的form状态
     var _form = _formKey.currentState;
     if (_form.validate()) {
       _form.save();
       print(info);
+      if (widget.vary == '修改昵称') {
+        userModel.user.userInfo.petname = info;
+      } else if(widget.vary == '修改性别'){
+        userModel.user.userInfo.stusex = info;
+      } else if(widget.vary == '修改生日'){
+        userModel.user.userInfo.birthday = int.parse(info);
+      }
+      //修改用户信息，传入json对象 ：userInfo转json:tojson
+      String infoJson =  json.encode(userModel.user.userInfo);
+      var proInfo = json.decode(infoJson);
+      Http.postData(
+        '/student/updateByPrimaryKey',
+        (data){
+          print(data);
+          var snackBar = SnackBar(
+                content: Text('修改成功'),
+              );
+              _scaffoldkey.currentState.showSnackBar(snackBar);
+        },
+        params:new Map<String, dynamic>.from(proInfo),
+        errorCallBack: (error){
+          print('error:$error');
+        }
+      );
+      
     }
   }
 
@@ -38,6 +69,7 @@ class _ChangeInfoState extends State<ChangeInfo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: _scaffoldkey,
         appBar: AppBar(
             iconTheme: IconThemeData(color: Colors.black),
             backgroundColor: Colors.white,
@@ -49,14 +81,19 @@ class _ChangeInfoState extends State<ChangeInfo> {
                     login();
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 15,horizontal: 16),
-                    child: Text(
-                      '保存',
-                      style: TextStyle(
-                          color: Color.fromRGBO(56, 56, 56, 1.0),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ))
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 16),
+                      child: GestureDetector(
+                        onTap: () {
+                          login();
+                        },
+                        child: Text(
+                          '保存',
+                          style: TextStyle(
+                              color: Color.fromRGBO(56, 56, 56, 1.0),
+                              fontWeight: FontWeight.bold),
+                        ),
+                      )))
             ],
             title: Padding(
               padding: const EdgeInsets.only(top: 10.0),
@@ -86,7 +123,6 @@ class _ChangeInfoState extends State<ChangeInfo> {
                         //获得焦点输入框下划线设为绿色
                         focusedBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.green))),
-                    keyboardType: TextInputType.number, //弹出数字键盘
                     //校验手机号
                     validator: (v) {
                       return v.trim().length > 0 ? null : "${widget.vary}不能为空";

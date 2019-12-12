@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:projectpractice/common/InfoNotify.dart';
 import 'dart:io';
 import 'package:projectpractice/pages/person/ChangeInfo.dart';
 import 'package:projectpractice/pages/login/BindPhone.dart';
+import 'package:provider/provider.dart';
 
 class PersonData extends StatefulWidget {
   @override
@@ -17,14 +19,21 @@ class _PersonDataState extends State<PersonData> {
   //定义个人列表信息
   List<PersonInfno> lists = [];
 
+  //工具类：时间戳转时间格式,参数：毫秒
+  getTime(val) { 
+    return DateTime.fromMicrosecondsSinceEpoch(val).toString().substring(0,10);
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    getItemData();
   }
 
-  getItemData() {
+  @override
+  Widget build(BuildContext context) {
+    UserModel userModel = Provider.of<UserModel>(context);
+    //个人相关信息渲染，从持久化信息中获取
     lists = [
       new PersonInfno(
           left1: Text(
@@ -57,7 +66,9 @@ class _PersonDataState extends State<PersonData> {
             style: TextStyle(color: Colors.black, fontSize: 16.0),
           ),
           right2: Text(
-            'Jack',
+            userModel.user.userInfo.petname == null
+                ? '未设置'
+                : userModel.user.userInfo.petname,
             style: TextStyle(color: Colors.grey, fontSize: 16.0),
           ),
           rIcon: Icon(
@@ -70,7 +81,9 @@ class _PersonDataState extends State<PersonData> {
             style: TextStyle(color: Colors.black, fontSize: 16.0),
           ),
           right2: Text(
-            '男',
+            userModel.user.userInfo.stusex == null
+                ? '未设置'
+                : userModel.user.userInfo.stusex,
             style: TextStyle(color: Colors.grey, fontSize: 16.0),
           ),
           rIcon: Icon(
@@ -83,7 +96,9 @@ class _PersonDataState extends State<PersonData> {
             style: TextStyle(color: Colors.black, fontSize: 16.0),
           ),
           right2: Text(
-            '1997.03.05',
+            userModel.user.userInfo.birthday == null
+                ? '未设置'
+                : getTime(userModel.user.userInfo.birthday),
             style: TextStyle(color: Colors.grey, fontSize: 16.0),
           ),
           rIcon: Icon(
@@ -104,10 +119,6 @@ class _PersonDataState extends State<PersonData> {
             size: 34,
           ))
     ];
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.black),
@@ -203,7 +214,18 @@ class _PersonDataState extends State<PersonData> {
     } else {
       return GestureDetector(
         onTap: () {
-          var datas = ['Jack', '男', '1997.03.05', '去绑定'];
+        UserModel userModel = Provider.of<UserModel>(context);
+         //!点击对应的信息进入编辑修改
+          var datas = ['', '', 1999, '去绑定'];
+          if (userModel.user.userInfo.petname!=null) {
+            datas[0] = userModel.user.userInfo.petname;
+          }
+          if (userModel.user.userInfo.stusex!=null) {
+            datas[1] = userModel.user.userInfo.stusex;
+          }
+          if (userModel.user.userInfo.birthday!=null) {
+            datas[2] = userModel.user.userInfo.birthday.toString();
+          }
           var vary = ['修改昵称', '修改性别', '修改生日', '绑定手机号'];
           if (datas[index - 1] == '去绑定') {
             Navigator.push(context, MaterialPageRoute(builder: (context) {

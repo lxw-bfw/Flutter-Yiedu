@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,10 +12,11 @@ import 'package:projectpractice/pages/course/couseInfo/CourseComment.dart';
 //TODO:在视频无法播放的时候全屏模型的时候无法真正的全屏宽度，只能占用一部分。
 
 class CourseVideo extends StatefulWidget {
-  CourseVideo({@required this.url});
+  CourseVideo({this.url, this.vidoeInfo,this.cid});
   //课程于视频id，这里模拟视频url参数
-  final String url;
-
+  final String url; //课程第一节视频地址
+  final String vidoeInfo; //该课程的所有视频信息
+  final int cid;
   @override
   _CourseVideoState createState() => _CourseVideoState();
 }
@@ -22,12 +24,19 @@ class CourseVideo extends StatefulWidget {
 class _CourseVideoState extends State<CourseVideo> {
   final FijkPlayer player = FijkPlayer();
   int _selectIndex = 0;
+  var videoInfoMap;
 
   @override
   void initState() {
     super.initState();
+    print(widget.vidoeInfo);
+    //视频信息转map
+    videoInfoMap = json.decode(widget.vidoeInfo);
+    print(videoInfoMap.length);
     //初始化换取课程、视频相关数据
-    player.setDataSource(widget.url, autoPlay: true);
+    print(widget.url);
+    var hostNmae = 'http://10.0.2.2:8088/';
+    player.setDataSource(hostNmae + widget.url, autoPlay: true);
   }
 
   @override
@@ -54,7 +63,8 @@ class _CourseVideoState extends State<CourseVideo> {
                     buildContext: context,
                     viewSize: viewSize,
                     texturePos: texturePos,
-                    videoUrl: widget.url);
+                    videoUrl: widget.url,
+                    videoInfos: videoInfoMap);
               }),
         ),
         //!视频播放区域结束，底部内容切换tab开始
@@ -145,9 +155,21 @@ class _CourseVideoState extends State<CourseVideo> {
     if (_selectIndex == 0) {
       return Chapter(
         id: 1,
+        videoInfo: widget.vidoeInfo,
+        changeVideo: (vurl, title) {
+          print('新的播放地址$vurl');
+          print('新的视频标题$title');
+          //更换新的视频播放
+          var hostNmae = 'http://10.0.2.2:8088/';
+          player.reset().then((info) {
+            player.setDataSource(hostNmae + vurl, autoPlay: true);
+          }).catchError((err) {
+            print('载入出错...');
+          });
+        },
       );
     } else if (_selectIndex == 1) {
-      return CourseDetail();
+      return CourseDetail(cid: widget.cid,);
     } else {
       return CourseComment();
     }
@@ -168,14 +190,18 @@ class CustomFijkPanel extends StatefulWidget {
   final BuildContext buildContext;
   final Size viewSize;
   final Rect texturePos;
-  final String videoUrl;
+  final String videoUrl; //视频url
+  var videoInfos; //所有视频信息
+  final changeVideoPlay;
 
-  const CustomFijkPanel(
+  CustomFijkPanel(
       {@required this.player,
       this.buildContext,
       this.viewSize,
       this.texturePos,
-      this.videoUrl});
+      this.videoUrl,
+      this.videoInfos,
+      this.changeVideoPlay});
 
   @override
   _CustomFijkPanelState createState() => _CustomFijkPanelState();
@@ -202,6 +228,9 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
   double _value = 0;
   int _dollars = 40;
   double slideMaxNum = 0; //进度条的最大进度
+
+  //课程视频播放相关
+  int currentVideoIndex = 0; //当前播放视频的索引
 
   @override
   void initState() {
@@ -321,292 +350,287 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
         min(widget.viewSize.height, widget.texturePos.bottom));
 
     return Positioned.fromRect(
-        rect: rect,
-        //TODO:手势事件：去掉定位好了可以布局了,使用GestureDetector监听手势变化：双击，滑动
-          child: Container(
-              width: double.infinity,
-              height: 230.0,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
+      rect: rect,
+      //TODO:手势事件：去掉定位好了可以布局了,使用GestureDetector监听手势变化：双击，滑动
+      child: Container(
+          width: double.infinity,
+          height: 230.0,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Stack(
                 children: <Widget>[
-                  Stack(
-                    children: <Widget>[
-                      //视频底部控件父层。根据全屏和非全屏控制局部ui widget,使用三元表达式
-                        Container(
-                            width: double.infinity,
-                            height: _isScreen ? 401.0 : 230.0,
-                            alignment: Alignment.bottomLeft,
-                            //视频底部控件
-                            child: Container(
-                              width: double.infinity,
-                              height: 40.0,
-                              decoration: BoxDecoration(
-                                  color: Color.fromRGBO(0, 0, 0, 0.2)),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                // crossAxisAlignment: CrossAxisAlignment.end,
-                                //底部播放控制按钮，进度条，全屏播放按钮
-                                children: <Widget>[
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 0.0),
-                                    child: IconButton(
-                                      icon: Icon(
-                                        _playing
-                                            ? Icons.pause
-                                            : Icons.play_arrow,
-                                        color: Colors.white,
-                                        size: 25.0,
-                                      ),
-                                      onPressed: () {
-                                        _playing
-                                            ? widget.player.pause()
-                                            : widget.player.start();
-                                        setState(() {
-                                          print(
-                                              '${player.value.fullScreen}---播放模式');
-                                          if (!player.value.fullScreen) {
-                                            _isScreen = false;
-                                          } else {
-                                            _isScreen = true;
-                                          }
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 0.0),
-                                    child: Text(
-                                      curTime,
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 14.0),
-                                    ),
-                                  ),
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 0.0),
-                                    width: _isScreen ? 550.0 : 240.0,
-                                    child: Slider(
-                                      value: _value, //!表示当前进度条的处于的进度位置，单位是秒
-                                      min: 0,
-                                      max: slideMaxNum, //最大值，根据视频的时长而定
-                                      onChanged: (newValue) {
-                                        //TODO:用户手动改变视频播放进度
-                                        setState(() {
-                                          _value = newValue;
-                                        });
-                                        //拖动进度条，改变视频进度，只能在视频播放的情况下调用
-                                        if (widget.player.value.state ==
-                                                FijkState.started ||
-                                            widget.player.value.state ==
-                                                FijkState.prepared ||
-                                            widget.player.value.state ==
-                                                FijkState.paused ||
-                                            widget.player.value.state ==
-                                                FijkState.completed) {
-                                          int position =
-                                              newValue.toInt(); //去掉小数转int
-                                          widget.player.seekTo(position * 1000);
-                                        }
-                                      },
-                                      onChangeStart: (startValue) {
-                                        //进度条开始
-                                      },
-                                      onChangeEnd: (endValue) {
-                                        //进度条结束
-                                      },
-                                      label: '$_value dollars',
-                                      semanticFormatterCallback: (newValue) {
-                                        return '${newValue.round()} dollars';
-                                      },
-                                      activeColor:
-                                          Color.fromRGBO(206, 14, 14, 1.0),
-                                      inactiveColor:
-                                          Color.fromRGBO(244, 244, 244, 0.5),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 0.0),
-                                    child: Text(
-                                      videoTime,
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 14.0),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(5.0, 0, 0, 0),
-                                    child: IconButton(
-                                      icon: Icon(
-                                        _isScreen
-                                            ? Icons.fullscreen_exit
-                                            : Icons.fullscreen,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        if (_isScreen) {
-                                          //退出全屏
-                                          player.pause();
-                                          widget.player.exitFullScreen();
-                                        } else {
-                                          //进入全屏
-                                          player.pause();
-                                          player.enterFullScreen();
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )),
-                      
-                      //顶部导航栏
-                      Container(
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 35.0, horizontal: 0.0),
-                          child: Row(
-                            children: <Widget>[
-                              Expanded(
-                                flex: 1,
-                                child: Row(
-                                  children: <Widget>[
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.chevron_left,
-                                        color: Colors.white,
-                                        size: 40.0,
-                                      ),
-                                      onPressed: () {
-                                        //路由返回
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 0.0, horizontal: 0.0),
-                                      child: Text(
-                                        'java基础课程第一节',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 17.0),
-                                      ),
-                                    ),
-                                  ],
+                  //视频底部控件父层。根据全屏和非全屏控制局部ui widget,使用三元表达式
+                  Container(
+                      width: double.infinity,
+                      height: _isScreen ? 401.0 : 230.0,
+                      alignment: Alignment.bottomLeft,
+                      //视频底部控件
+                      child: Container(
+                        width: double.infinity,
+                        height: 40.0,
+                        decoration:
+                            BoxDecoration(color: Color.fromRGBO(0, 0, 0, 0.2)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          // crossAxisAlignment: CrossAxisAlignment.end,
+                          //底部播放控制按钮，进度条，全屏播放按钮
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 0.0),
+                              child: IconButton(
+                                icon: Icon(
+                                  _playing ? Icons.pause : Icons.play_arrow,
+                                  color: Colors.white,
+                                  size: 25.0,
                                 ),
+                                onPressed: () {
+                                  _playing
+                                      ? widget.player.pause()
+                                      : widget.player.start();
+                                  setState(() {
+                                    print('${player.value.fullScreen}---播放模式');
+                                    if (!player.value.fullScreen) {
+                                      _isScreen = false;
+                                    } else {
+                                      _isScreen = true;
+                                    }
+                                  });
+                                },
                               ),
-                              Expanded(
-                                flex: 1,
-                                child: Container(
-                                    alignment: Alignment.topRight,
-                                    padding: const EdgeInsets.only(right: 5.0),
-                                    //弹出菜单控件
-                                    child: new PopupMenuButton<String>(
-                                        onSelected: (String value) {
-                                          setState(() {
-                                            _playSpeed = double.parse(value);
-                                          });
-                                          print(_playSpeed);
-                                          widget.player.setSpeed(_playSpeed);
-                                        },
-                                        icon: Icon(
-                                          Icons.more_vert,
-                                          color: Colors.white,
-                                          size: 30.0,
-                                        ),
-                                        itemBuilder: (BuildContext context) =>
-                                            <PopupMenuItem<String>>[
-                                              new PopupMenuItem<String>(
-                                                  enabled: false,
-                                                  value: '0',
-                                                  child: new Text('播放倍速选择')),
-                                              new PopupMenuItem<String>(
-                                                  value: '0.75',
-                                                  child: new Text('0.75')),
-                                              new PopupMenuItem<String>(
-                                                  value: '1.0',
-                                                  child: new Text('1.0')),
-                                              new PopupMenuItem<String>(
-                                                  value: '1.25',
-                                                  child: new Text('1.25')),
-                                              new PopupMenuItem<String>(
-                                                  value: '1.5',
-                                                  child: new Text('1.5')),
-                                              new PopupMenuItem<String>(
-                                                  value: '1.75',
-                                                  child: new Text('1.75')),
-                                              new PopupMenuItem<String>(
-                                                  value: '2.0',
-                                                  child: new Text('2.0')),
-                                            ])),
-                              )
-                            ],
-                          )),
-                      GestureDetector(
-                        onDoubleTap: () {
-                          _playing
-                              ? widget.player.pause()
-                              : widget.player.start();
-                        },
-                        onPanDown: (DragDownDetails e) {
-                          //打印手指按下的位置(相对于屏幕)：此时
-                          print("用户手指按下：${e.globalPosition}");
-                        },
-                        //手指滑动时会触发此回调
-                        onPanUpdate: (DragUpdateDetails e) {
-                          //用户手指滑动时，更新偏移，重新构建
-                          //手指滑动的精确度不好控制，我这里把超过100转为100显示和小于0都转为0显示
-                          // 显示是这样的，同样的音量设置也使用voiceNum这个值为准。
-                          _isVoice = true;
-                          if (voiceNum < 100 || voiceNum > 0) {
-                            //向上
-                            if (e.delta.dy <= 0) {
-                              var num = voiceNum - 2 * e.delta.dy;
-                              num = num > 100 ? 100 : num;
-                              voiceNum = double.parse(num.round().toString());
-                            } else {
-                              var num = voiceNum - 2 * e.delta.dy;
-                              num = num < 0 ? 0 : num;
-                              voiceNum = double.parse(num.round().toString());
-                            }
-                          }
-                          //把vouceNum设置在 0 - 1.0这范围。
-                          player.setVolume(voiceNum * 0.01);
-                          setState(() {
-                            //出现音量提示
-                            //由于这里面向上滑动的时候打印的y值是负数，向下的时候是正数，所以我们取个反
-                            // 当前音量 + step *  -e.delta.dy
-                            // print(-e.delta.dy);
-                            // _top += e.delta.dy;
-                          });
-                        },
-                        onPanEnd: (DragEndDetails e) {
-                          //打印滑动结束时在x、y轴上的速度
-                          print(e.velocity);
-                          _isVoice = false;
-                          setState(() {});
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 70.0),
-                          width: double.infinity,
-                          height: 130.0,
-                          decoration:
-                              BoxDecoration(color: Color.fromRGBO(0, 0, 0, .0)),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 0.0),
+                              child: Text(
+                                curTime,
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 14.0),
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(top: 0.0),
+                              width: _isScreen ? 550.0 : 240.0,
+                              child: Slider(
+                                value: _value, //!表示当前进度条的处于的进度位置，单位是秒
+                                min: 0,
+                                max: slideMaxNum, //最大值，根据视频的时长而定
+                                onChanged: (newValue) {
+                                  //TODO:用户手动改变视频播放进度
+                                  setState(() {
+                                    _value = newValue;
+                                  });
+                                  //拖动进度条，改变视频进度，只能在视频播放的情况下调用
+                                  if (widget.player.value.state ==
+                                          FijkState.started ||
+                                      widget.player.value.state ==
+                                          FijkState.prepared ||
+                                      widget.player.value.state ==
+                                          FijkState.paused ||
+                                      widget.player.value.state ==
+                                          FijkState.completed) {
+                                    int position = newValue.toInt(); //去掉小数转int
+                                    widget.player.seekTo(position * 1000);
+                                  }
+                                },
+                                onChangeStart: (startValue) {
+                                  //进度条开始
+                                },
+                                onChangeEnd: (endValue) {
+                                  //进度条结束
+                                },
+                                label: '$_value dollars',
+                                semanticFormatterCallback: (newValue) {
+                                  return '${newValue.round()} dollars';
+                                },
+                                activeColor: Color.fromRGBO(206, 14, 14, 1.0),
+                                inactiveColor:
+                                    Color.fromRGBO(244, 244, 244, 0.5),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 0.0),
+                              child: Text(
+                                videoTime,
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 14.0),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(5.0, 0, 0, 0),
+                              child: IconButton(
+                                icon: Icon(
+                                  _isScreen
+                                      ? Icons.fullscreen_exit
+                                      : Icons.fullscreen,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  if (_isScreen) {
+                                    //退出全屏
+                                    player.pause();
+                                    widget.player.exitFullScreen();
+                                  } else {
+                                    //进入全屏
+                                    player.pause();
+                                    player.enterFullScreen();
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      //音量提示
-                      showVoice(),
+                      )),
 
-                      //视频状态消息提示：播放出错、正在缓冲，播放完毕显示播放下一节按钮
-                      //根据不同的播放状态显示不的ui
-                      showPlayInfo(),
-                      //用于监听手势的布局
-                    ],
-                  )
+                  //顶部导航栏
+                  Container(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 35.0, horizontal: 0.0),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            flex: 1,
+                            child: Row(
+                              children: <Widget>[
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.chevron_left,
+                                    color: Colors.white,
+                                    size: 40.0,
+                                  ),
+                                  onPressed: () {
+                                    //路由返回
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 0.0, horizontal: 0.0),
+                                  child: Text(
+                                    widget.videoInfos.length == 0
+                                        ? '暂无视频'
+                                        : widget.videoInfos[currentVideoIndex]
+                                            ['title'],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 17.0),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Container(
+                                alignment: Alignment.topRight,
+                                padding: const EdgeInsets.only(right: 5.0),
+                                //弹出菜单控件
+                                child: new PopupMenuButton<String>(
+                                    onSelected: (String value) {
+                                      setState(() {
+                                        _playSpeed = double.parse(value);
+                                      });
+                                      print(_playSpeed);
+                                      widget.player.setSpeed(_playSpeed);
+                                    },
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: Colors.white,
+                                      size: 30.0,
+                                    ),
+                                    itemBuilder: (BuildContext context) =>
+                                        <PopupMenuItem<String>>[
+                                          new PopupMenuItem<String>(
+                                              enabled: false,
+                                              value: '0',
+                                              child: new Text('播放倍速选择')),
+                                          new PopupMenuItem<String>(
+                                              value: '0.75',
+                                              child: new Text('0.75')),
+                                          new PopupMenuItem<String>(
+                                              value: '1.0',
+                                              child: new Text('1.0')),
+                                          new PopupMenuItem<String>(
+                                              value: '1.25',
+                                              child: new Text('1.25')),
+                                          new PopupMenuItem<String>(
+                                              value: '1.5',
+                                              child: new Text('1.5')),
+                                          new PopupMenuItem<String>(
+                                              value: '1.75',
+                                              child: new Text('1.75')),
+                                          new PopupMenuItem<String>(
+                                              value: '2.0',
+                                              child: new Text('2.0')),
+                                        ])),
+                          )
+                        ],
+                      )),
+                  GestureDetector(
+                    onDoubleTap: () {
+                      _playing ? widget.player.pause() : widget.player.start();
+                    },
+                    onPanDown: (DragDownDetails e) {
+                      //打印手指按下的位置(相对于屏幕)：此时
+                      print("用户手指按下：${e.globalPosition}");
+                    },
+                    //手指滑动时会触发此回调
+                    onPanUpdate: (DragUpdateDetails e) {
+                      //用户手指滑动时，更新偏移，重新构建
+                      //手指滑动的精确度不好控制，我这里把超过100转为100显示和小于0都转为0显示
+                      // 显示是这样的，同样的音量设置也使用voiceNum这个值为准。
+                      _isVoice = true;
+                      if (voiceNum < 100 || voiceNum > 0) {
+                        //向上
+                        if (e.delta.dy <= 0) {
+                          var num = voiceNum - 2 * e.delta.dy;
+                          num = num > 100 ? 100 : num;
+                          voiceNum = double.parse(num.round().toString());
+                        } else {
+                          var num = voiceNum - 2 * e.delta.dy;
+                          num = num < 0 ? 0 : num;
+                          voiceNum = double.parse(num.round().toString());
+                        }
+                      }
+                      //把vouceNum设置在 0 - 1.0这范围。
+                      player.setVolume(voiceNum * 0.01);
+                      setState(() {
+                        //出现音量提示
+                        //由于这里面向上滑动的时候打印的y值是负数，向下的时候是正数，所以我们取个反
+                        // 当前音量 + step *  -e.delta.dy
+                        // print(-e.delta.dy);
+                        // _top += e.delta.dy;
+                      });
+                    },
+                    onPanEnd: (DragEndDetails e) {
+                      //打印滑动结束时在x、y轴上的速度
+                      print(e.velocity);
+                      _isVoice = false;
+                      setState(() {});
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 70.0),
+                      width: double.infinity,
+                      height: 130.0,
+                      decoration:
+                          BoxDecoration(color: Color.fromRGBO(0, 0, 0, .0)),
+                    ),
+                  ),
+                  //音量提示
+                  showVoice(),
+
+                  //视频状态消息提示：播放出错、正在缓冲，播放完毕显示播放下一节按钮
+                  //根据不同的播放状态显示不的ui
+                  showPlayInfo(),
+                  //用于监听手势的布局
                 ],
-              )),
-        );
+              )
+            ],
+          )),
+    );
   }
 
   @override

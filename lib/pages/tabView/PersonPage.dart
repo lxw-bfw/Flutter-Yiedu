@@ -78,22 +78,41 @@ class _PersonPageState extends State<PersonPage>
               //昵称
               Padding(
                 padding: EdgeInsets.fromLTRB(150.0, 190.0, 50.0, 10.0),
-                child: Text(
-                  'Mr.liu',
-                  style: TextStyle(
-                      color: Colors.brown,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 19.0),
-                ),
+                //TODO:判断是否登录，是的话就显示用户名信息需信息，否的话就显示未登录
+                child: userModel.isLogin
+                    ? Text(
+                        userModel.user.userInfo.stuname!=null? userModel.user.userInfo.stuname : 'Mr.Liu' ,//用户名称渲染
+                        style: TextStyle(
+                            color: Colors.brown,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 19.0),
+                      )
+                    : GestureDetector(
+                        child: Text(
+                          '未登录',
+                          style: TextStyle(
+                              color: Colors.brown,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20.0),
+                        ),
+                        onTap: () {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            return LoginIndex();
+                          }));
+                        },
+                      ),
               ),
               // 性别
               Padding(
                   padding: EdgeInsets.fromLTRB(210.0, 190.0, 50.0, 10.0),
-                  child: Image(
-                    image: AssetImage('images/sex-woman.png'),
-                    width: 25.0,
-                    height: 25.0,
-                  ))
+                  child: userModel.isLogin
+                      ? Image(
+                          image: userModel.user.userInfo.stusex=='男'? AssetImage('images/man.png') : AssetImage('images/sex-woman.png'),
+                          width: 25.0,
+                          height: 25.0,
+                        )
+                      : Text(''))
             ],
           ),
           //相关信息列表页面
@@ -118,10 +137,18 @@ class _PersonPageState extends State<PersonPage>
                     color: Color.fromRGBO(207, 207, 207, 1.0)),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) {
-                      return PersonData();
-                    }));
+                    //TODO:判断一下是否登录，其实页面跳转需要判断登录应该统一使用路由拦截来实现
+                    if (userModel.isLogin) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return PersonData();
+                      }));
+                    } else {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return LoginIndex();
+                      }));
+                    }
                   },
                   child: ListItem(
                     height: 56.0,
@@ -136,9 +163,17 @@ class _PersonPageState extends State<PersonPage>
                     color: Color.fromRGBO(207, 207, 207, 1.0)),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return MySign();
-                    }));
+                    if (userModel.isLogin) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return MySign();
+                      }));
+                    } else {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return LoginIndex();
+                      }));
+                    }
                   },
                   child: ListItem(
                     height: 56.0,
@@ -153,17 +188,25 @@ class _PersonPageState extends State<PersonPage>
                     indent: 0.0,
                     color: Color.fromRGBO(207, 207, 207, 1.0)),
                 GestureDetector(
-                  onTap: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return MyOrder();
-                    }));
+                  onTap: () {
+                    if (userModel.isLogin) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return MyOrder();
+                      }));
+                    } else {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return LoginIndex();
+                      }));
+                    }
                   },
-                  child:ListItem(
-                  height: 56.0,
-                  LeftIconData: Icons.featured_play_list,
-                  title: '我的订单',
-                  rightIconData: Icons.chevron_right,
-                ),
+                  child: ListItem(
+                    height: 56.0,
+                    LeftIconData: Icons.featured_play_list,
+                    title: '我的订单',
+                    rightIconData: Icons.chevron_right,
+                  ),
                 ),
                 Divider(
                     height: 1.8,
@@ -258,7 +301,7 @@ class _PersonPageState extends State<PersonPage>
                     }));
                   },
                   child: Text(
-                   userModel.isLogin? '退出登录':'点击登录',
+                    userModel.isLogin ? '退出登录' : '点击登录',
                     style: TextStyle(
                         color: Color.fromRGBO(212, 48, 48, 1.0),
                         fontSize: 18.0,

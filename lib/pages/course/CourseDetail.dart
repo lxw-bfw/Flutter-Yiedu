@@ -1,17 +1,37 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/InfoNotify.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
 import 'package:projectpractice/pages/course/PayOrder.dart';
+import 'package:provider/provider.dart';
+import 'package:projectpractice/pages/login/LoginIndex.dart';
 
 class CourseDetail extends StatefulWidget {
+  
+  //由于进来前的的课程列表页面每一项已经获取到了课程的全部信息，所以这里我们通过传参数的形式渲染
+  CourseDetail({this.courseDetail});
+  //课程详情json 字符串
+   String courseDetail;
+
   @override
   _CourseDetailState createState() => _CourseDetailState();
 }
 
 class _CourseDetailState extends State<CourseDetail> {
   //页面底部有一个类似底部导航栏的组件：我们使用自定义底部导航栏来实现
+  var courseDetailInfo;
+
+   @override
+  void initState() {
+    // TODO: implement initState
+    courseDetailInfo = json.decode(widget.courseDetail);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
+    UserModel userModel = Provider.of<UserModel>(context);
     return Scaffold(
         appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.black),
@@ -44,10 +64,28 @@ class _CourseDetailState extends State<CourseDetail> {
             BottomNavigationBarItem(
                 icon: Icon(Icons.favorite_border), title: Text('收藏')),
             BottomNavigationBarItem(
-                icon: Icon(Icons.add,color: Colors.red,),
-                title: Text(
-                  '立即购买',
-                  style: TextStyle(color: Colors.red, fontSize: 16.0),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.red,
+                ),
+                title: GestureDetector(
+                  onTap: () {
+                    if (!userModel.isLogin) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return PayOrder(imgsrc: courseDetailInfo['img'],title: courseDetailInfo['cname'],price:courseDetailInfo['price'],cid:courseDetailInfo['cid'] ,);
+                      }));
+                    } else {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return LoginIndex();
+                      }));
+                    }
+                  },
+                  child: Text(
+                    '立即购买',
+                    style: TextStyle(color: Colors.red, fontSize: 16.0),
+                  ),
                 ),
                 backgroundColor: Colors.red),
           ],
@@ -70,10 +108,11 @@ class _CourseDetailState extends State<CourseDetail> {
                   children: <Widget>[
                     Container(
                       height: 180.0,
+                      margin: const EdgeInsets.symmetric(vertical: 0,horizontal: 5),
                       decoration: BoxDecoration(
                           image: DecorationImage(
-                              image: AssetImage('images/course2.jpg'),
-                              fit: BoxFit.cover)),
+                              image: NetworkImage(courseDetailInfo['img']),
+                              fit: BoxFit.fill)),
                     ),
                     Container(
                       margin: const EdgeInsets.symmetric(
@@ -84,7 +123,7 @@ class _CourseDetailState extends State<CourseDetail> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
                           Text(
-                            '跟简七一起学理财',
+                            courseDetailInfo['cname'],
                             style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -115,7 +154,7 @@ class _CourseDetailState extends State<CourseDetail> {
                                   Padding(
                                     padding: const EdgeInsets.only(left: 20.0),
                                     child: Text(
-                                      '10人学过',
+                                      "总共${courseDetailInfo['crouseTime']}学时",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -148,7 +187,7 @@ class _CourseDetailState extends State<CourseDetail> {
                             indent: 0.0,
                           ),
                           Text(
-                            '￥398.0',
+                            "￥${courseDetailInfo['price']}",
                             style: TextStyle(
                                 color: Color.fromRGBO(224, 80, 45, 1.0),
                                 fontSize: 17.0,
@@ -169,7 +208,7 @@ class _CourseDetailState extends State<CourseDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      '适用人群',
+                      '课程积分',
                       style: TextStyle(
                         color: Colors.grey,
                       ),
@@ -178,7 +217,7 @@ class _CourseDetailState extends State<CourseDetail> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 5.0, horizontal: 0.0),
                       child: Text(
-                        '零基础小白学理财，这门课就够了！',
+                        "学完本课程一共可以获得积分${courseDetailInfo['integral']==null? 0 :courseDetailInfo['integral'] }",
                         style: TextStyle(
                           color: Colors.grey,
                         ),
@@ -203,7 +242,7 @@ class _CourseDetailState extends State<CourseDetail> {
                     Wrap(
                       children: <Widget>[
                         Text(
-                          '这是课程简介' * 20,
+                          courseDetailInfo['crouseIntroduce'],
                           style: TextStyle(
                             color: Colors.grey,
                           ),
@@ -224,9 +263,5 @@ class _CourseDetailState extends State<CourseDetail> {
   //点击底部导航栏，跳转到对应的页面，改变索引
   void _onItemTapped(int index) {
     //根据index判断点击的是哪一个，进行路由跳转
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-    return PayOrder();
-    }));
-   
   }
 }

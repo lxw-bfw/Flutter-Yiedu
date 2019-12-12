@@ -37,11 +37,18 @@ class LoginIndexState extends State<LoginIndex> {
                 Padding(
                   padding:
                       EdgeInsets.symmetric(vertical: 30.0, horizontal: 12.0),
-                  child: Icon(
+                  child: GestureDetector(
+                    onTap: (){
+                       //返回
+                       Navigator.of(context).pop();
+                    },
+                    child:Icon(
                     Icons.clear,
                     color: Color.fromRGBO(86, 83, 83, 1.0),
                     size: 30.0,
-                  ),
+                  ), 
+                  ) 
+                  
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 50.0),
