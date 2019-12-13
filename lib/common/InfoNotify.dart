@@ -53,3 +53,14 @@ class CheceBox with ChangeNotifier{
   }
 
 }
+
+// 视频播放页面部分信息跨组件共享
+class VideoInfoProfider with ChangeNotifier{
+  String _title = '视频状态管理';
+  get title => _title;
+
+  changeTitle(String title){
+    _title = title;
+    notifyListeners();
+  }
+}

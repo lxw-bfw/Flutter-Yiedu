@@ -70,7 +70,7 @@ class _CourseDetailState extends State<CourseDetail> {
                 ),
                 title: GestureDetector(
                   onTap: () {
-                    if (!userModel.isLogin) {
+                    if (userModel.isLogin) {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (context) {
                         return PayOrder(imgsrc: courseDetailInfo['img'],title: courseDetailInfo['cname'],price:courseDetailInfo['price'],cid:courseDetailInfo['cid'] ,);
@@ -243,6 +243,8 @@ class _CourseDetailState extends State<CourseDetail> {
                       children: <Widget>[
                         Text(
                           courseDetailInfo['crouseIntroduce'],
+                          maxLines: 5,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.grey,
                           ),

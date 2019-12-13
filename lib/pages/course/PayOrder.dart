@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Global.dart';
 import 'package:projectpractice/common/Http.dart';
 import 'package:projectpractice/widget/Goodsbox.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
@@ -8,12 +9,11 @@ import 'package:projectpractice/pages/course/CourseVieo.dart';
 //确认订单页面
 
 class PayOrder extends StatefulWidget {
-
-  PayOrder({this.imgsrc,this.title,this.price,this.cid});
+  PayOrder({this.imgsrc, this.title, this.price, this.cid});
   String imgsrc;
   String title;
   double price;
-  int cid;//课程id--获取课程视频需要
+  int cid; //课程id--获取课程视频需要
 
   @override
   _PayOrderState createState() => _PayOrderState();
@@ -428,27 +428,49 @@ class _PayOrderState extends State<PayOrder> {
                             onTap: () {
                               //点击跳转微信支付
                               //TODO:暂时做成，支付成功后，在这里根据cid获取到课程的视频这样
-                              Http.getData(
-                              '/videoInfo/selectByCid', 
-                              (data){
-                                print(json.encode(data['data']));
-                                var url;
-                                if (data['data'].length == 0) {
-                                  url = '';
-                                } else {
-                                   url = data['data'][0]['vurl'];
-                                }
-                                 Navigator.push(context, MaterialPageRoute(builder: (context) {
-                              return CourseVideo(url:url,vidoeInfo: json.encode(data['data'],),cid: widget.cid,);
-                              }));
-                              },
-                              params: {'cid':widget.cid},
-                              errorCallBack: (error){
-                                print('error:$error');
-                              }
-                            );
-                            return;
-                             
+
+                              //点击提交支付信息获取到后台返沪的订单信息后调用支付宝支付
+                              var user = Global.user;
+                              Http.postData(
+                                  '/orderInfo/insertSelective',
+                                  (data) {
+                                    print(data);
+                                    Http.getData(
+                                        '/videoInfo/selectByCid',
+                                        (data) {
+                                          print(json.encode(data['data']));
+                                          var url;
+                                          if (data['data'].length == 0) {
+                                            url = '';
+                                          } else {
+                                            url = data['data'][0]['vurl'];
+                                          }
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                                  builder: (context) {
+                                            return CourseVideo(
+                                              url: url,
+                                              vidoeInfo: json.encode(
+                                                data['data'],
+                                              ),
+                                              cid: widget.cid,
+                                            );
+                                          }));
+                                        },
+                                        params: {'cid': widget.cid},
+                                        errorCallBack: (error) {
+                                          print('error:$error');
+                                        });
+                                  },
+                                  params: {
+                                    'cid': widget.cid,
+                                    'price': widget.price,
+                                    'stuid': user.userInfo.stuid,
+                                    'onpay': 0
+                                  },
+                                  errorCallBack: (error) {
+                                    print(error);
+                                  });
                             },
                             child: Text(
                               '提交订单',

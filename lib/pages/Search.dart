@@ -1,8 +1,11 @@
 //使用SearchDelegate封装的一个搜索页面：这里是用于课程搜索
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Http.dart';
 import 'dart:convert';
 import 'package:projectpractice/widget/Goodsbox.dart';
+import 'package:projectpractice/widget/LoadResultInfo.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
+import 'package:projectpractice/pages/course/CourseDetail.dart';
 
 typedef SearchItemCall = void Function(String item);
 
@@ -43,7 +46,9 @@ class SearchBarDelegate extends SearchDelegate<String> {
     //TODO:点击了搜索，获取数据后显示查询到结果的页面
     //带下拉刷新，上拉加载的。不过listview的长度要加2，一个是第一行显示共加载多少条数据的，一个是最后一行显示加载更多的
     //这里我使用一个新的带自己状态的widget
-    return searchResult(keywords: 'java',);
+    return searchResult(
+      keywords: query,
+    );
   }
 
   @override
@@ -188,40 +193,25 @@ class searchResult extends StatefulWidget {
 }
 
 class _searchResultState extends State<searchResult> {
-
   GlobalKey<RefreshIndicatorState> _refreshKey =
       GlobalKey<RefreshIndicatorState>();
   //创建滚动监听控制器，赋值给可滚动的组件controle属性就可以监听滚动了
   ScrollController _scrollController = new ScrollController();
   // 数据源
-  List<ChapterConten> _dataSource = List<ChapterConten>();
+  var _dataSource = [];
   // 当前加载的页数
-  int _pageSize = 0;
-  bool _isRefreshOk = false;//判断下拉刷新是否结束
-
-  
-  void _loadData(int index) {
-    var charpter =
-        '[{"isParentTitle":true,"title":"课程介绍相关"},{"isParentTitle":false,"title":"1-1 课程相关技术分享"},{"isParentTitle":false,"title":"1-2 课程开发环境搭建"},{"isParentTitle":false,"title":"1-3 课程开发环境搭建"},{"isParentTitle":false,"title":"1-4 课程开发环境搭建"},{"isParentTitle":false,"title":"1-5 课程开发环境搭建"}]';
-    List items = json.decode(charpter);
-    for (var i = 0; i < items.length; i++) {
-      var d = new ChapterConten();
-      d.isParentTitle = items[i]["isParentTitle"];
-      d.title = items[i]["title"];
-      _dataSource.add(d);
-    }
-  }
+  int _pageSize = 1;
+  int totalPage = 1;
+  int totalResult = 0; //共找到的结果
+  bool _isRefreshOk = false; //判断下拉刷新是否结束
 
   //每次下拉刷新的时候触发
   Future<Null> _onRefresh() {
     return Future.delayed(Duration(seconds: 2), () {
       print("正在刷新...");
-      _pageSize = 0; //重新刷新：分页为0重新请求数据
+      _pageSize = 1; //重新刷新：分页为0重新请求数据
       _dataSource.clear();
-      setState(() {
-        _loadData(_pageSize);
-        _isRefreshOk = true;
-      });
+      getCourseByName();
     });
   }
 
@@ -260,6 +250,34 @@ class _searchResultState extends State<searchResult> {
     super.initState();
   }
 
+  //根据获取到的搜索关键词进程课程的模糊查询
+  getCourseByName() {
+    Http.getData(
+        '/crouseInfo/fuzzyQueryByName',
+        (data) {
+          print(data);
+          _isRefreshOk = true;
+          totalResult = data['count'];
+          if (data['data'] != null) {
+            for (var i = 0; i < data['data'].length; i++) {
+              if (data['data'][i]['img'] == null ||
+                  !data['data'][i]['img'].contains('http')) {
+                data['data'][i]['img'] =
+                    'http://placehold.it/400x200?text=course...';
+              }
+            }
+            _dataSource = data['data'];
+          } else {
+            _dataSource = [];
+          }
+          setState(() {});
+        },
+        params: {'cname': widget.keywords},
+        errorCallBack: (error) {
+          print('error:${error}');
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -267,10 +285,10 @@ class _searchResultState extends State<searchResult> {
       onRefresh: _onRefresh,
       color: Theme.of(context).primaryColor, //定义上拉刷新circle组件的加载进度条颜色
       backgroundColor: Colors.white,
-      child:  ListView.builder(
+      child: ListView.builder(
           shrinkWrap: true,
           physics: new AlwaysScrollableScrollPhysics(),
-          itemCount: _dataSource.isEmpty ? 1 : _dataSource.length+2,
+          itemCount: _dataSource.isEmpty ? 1 : _dataSource.length + 1,
           itemBuilder: (BuildContext context, int index) {
             return items(context, index);
           }),
@@ -278,16 +296,27 @@ class _searchResultState extends State<searchResult> {
   }
 
   //TODO:需要判断真实数据为空和不为空的情况。
-   Widget items(context,index){
-     if (index == 0 && _isRefreshOk ) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 10.0,horizontal: 12.0),
-          child: Text(
-            '共找到${_dataSource.length}个相关内容',
-          ),
-        );  
-     } else if (index == _dataSource.length+2 && _isRefreshOk) {
-         return IntrinsicHeight(
+  Widget items(context, index) {
+    if (_dataSource.isEmpty) {
+      //空的情况
+      return Container(
+        height: 300,
+        alignment: Alignment.center,
+        child: LoadResultInfo(
+          info: '空空如也',
+        ),
+      );
+    }
+    //  } else if (index == 0 ) {
+    //     return Container(
+    //       padding: const EdgeInsets.symmetric(vertical: 10.0,horizontal: 12.0),
+    //       child: Text(
+    //         '共找到$totalResult个相关内容',
+    //       ),
+    //     );
+    //  }
+    else if (index == _dataSource.length) {
+      return IntrinsicHeight(
         child: Center(
           child: Padding(
             padding: EdgeInsets.all(10.0),
@@ -295,97 +324,101 @@ class _searchResultState extends State<searchResult> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 4.0,
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-                  child: Text('加载中...', style: TextStyle(fontSize: 16.0)),
-                )
+                // SizedBox(
+                //   width: 20,
+                //   height: 20,
+                //   child: CircularProgressIndicator(
+                //     strokeWidth: 4.0,
+                //   ),
+                // ),
+                // Padding(
+                //   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+                //   child: Text('加载中...', style: TextStyle(fontSize: 16.0)),
+                // )
               ],
             ),
           ),
         ),
       );
-     } 
-     //搜索到的课程列表:
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-      height: 90.0,
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            flex: 2,
-            child: Goodsbox(
-              imgsrc: 'images/courselist-1.jpg',
-              heigth: 80.0,
-              title: '',
-              introduce: '',
-              opc: 0.0,
+    }
+    //搜索到的课程列表:
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return CourseDetail(courseDetail: json.encode(_dataSource[index]),);
+        }));
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+        height: 90.0,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              flex: 2,
+              child: Goodsbox(
+                imgsrc: _dataSource[index]['img'],
+                heigth: 80.0,
+                title: '',
+                introduce: '',
+                opc: 0.0,
+              ),
             ),
-          ),
-          Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Text(
-                      'Java通用型支付+电商平台双系统高级开发工程师课程',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: Color.fromRGBO(0, 0, 0, 1.0), fontSize: 16.0),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        RatingBar(
-                          clickable: false,
-                          size: 15,
-                          color: Colors.green,
-                          padding: 0.5,
-                          value: 4.8,
-                        ),
-                        Text(
-                          '4.8分',
-                          style: TextStyle(
-                              color: Color.fromRGBO(168, 168, 168, 1.0)),
-                        ),
-                        Text(
-                          '10人学过',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: Color.fromRGBO(168, 168, 168, 1.0)),
-                        )
-                      ],
-                    ),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          '￥1298',
-                          style: TextStyle(
-                              color: Color.fromRGBO(168, 168, 168, 1.0)),
-                        )
-                      ],
-                    )
-                  ],
-                ),
-              ))
-        ],
+            Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 5.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Text(
+                        _dataSource[index]['cname'],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: Color.fromRGBO(0, 0, 0, 1.0),
+                            fontSize: 16.0),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          RatingBar(
+                            clickable: false,
+                            size: 15,
+                            color: Colors.green,
+                            padding: 0.5,
+                            value: 4.8,
+                          ),
+                          Text(
+                            '4.8分',
+                            style: TextStyle(
+                                color: Color.fromRGBO(168, 168, 168, 1.0)),
+                          ),
+                          Text(
+                            '10人学过',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: Color.fromRGBO(168, 168, 168, 1.0)),
+                          )
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            '￥${_dataSource[index]['price']}',
+                            style: TextStyle(
+                                color: Color.fromRGBO(168, 168, 168, 1.0)),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ))
+          ],
+        ),
       ),
     );
-   }
+  }
 }
 //课程章节 实体类
-class ChapterConten {
-  bool isParentTitle;
-  String title;
-}

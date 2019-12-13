@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as prefix0;
 
 import 'package:flutter/material.dart';
@@ -52,7 +53,6 @@ class _HomePageState extends State<HomePage> {
     imgData.add('http://placehold.it/400x200?text=course...');
     imgData.add('http://placehold.it/400x200?text=course...');
     imgData.add('http://placehold.it/400x200?text=course...');
-    
 
     super.initState();
 
@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
   int pageNum = 1;
   int pageSize = 4;
   int totalPage = 1; //总页数,需要获取后台数据后进行渲染
-  var carousIds = [];//记录轮播课程的课程id
+  var carousIds = []; //记录轮播课程的课程id
   getRecommendCourse() {
     Http.getData(
         '/crouseInfo/selectAll',
@@ -251,7 +251,7 @@ class _HomePageState extends State<HomePage> {
                                                 builder: (context) {
                                           return CourseList(
                                             id: varys1[0]['kid'],
-                                            cname:varys1[0]['kindName'],
+                                            cname: varys1[0]['kindName'],
                                           );
                                         }));
                                       },
@@ -278,7 +278,7 @@ class _HomePageState extends State<HomePage> {
                                                 builder: (context) {
                                           return CourseList(
                                             id: varys1[1]['kid'],
-                                            cname:varys1[1]['kindName'],
+                                            cname: varys1[1]['kindName'],
                                           );
                                         }));
                                       },
@@ -288,7 +288,7 @@ class _HomePageState extends State<HomePage> {
                                         title: varys1[1]['kindName'],
                                         introduce: '小白也可以学好',
                                         opc: 0.6,
-                                         imgType: 2,
+                                        imgType: 2,
                                       ),
                                     ))),
                             Expanded(
@@ -305,7 +305,7 @@ class _HomePageState extends State<HomePage> {
                                                 builder: (context) {
                                           return CourseList(
                                             id: varys1[2]['kid'],
-                                            cname:varys1[2]['kindName'],
+                                            cname: varys1[2]['kindName'],
                                           );
                                         }));
                                       },
@@ -315,7 +315,7 @@ class _HomePageState extends State<HomePage> {
                                         title: varys1[2]['kindName'],
                                         introduce: '应用最广泛的语言',
                                         opc: 0.6,
-                                         imgType: 2,
+                                        imgType: 2,
                                       ),
                                     )))
                           ],
@@ -333,15 +333,15 @@ class _HomePageState extends State<HomePage> {
                                       child: GestureDetector(
                                         onTap: () {
                                           // TODO:点击跳转到点击进入对应分类查询到课程列表页面
-                                         print('分类id是${varys1[3]['kid']}');
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return CourseList(
-                                            id: varys1[3]['kid'],
-                                            cname:varys1[3]['kindName'],
-                                          );
-                                        }));
+                                          print('分类id是${varys1[3]['kid']}');
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                                  builder: (context) {
+                                            return CourseList(
+                                              id: varys1[3]['kid'],
+                                              cname: varys1[3]['kindName'],
+                                            );
+                                          }));
                                         },
                                         child: Goodsbox(
                                           imgsrc: 'images/courser-bg6.png',
@@ -349,7 +349,7 @@ class _HomePageState extends State<HomePage> {
                                           title: varys1[3]['kindName'],
                                           introduce: '移动市场份额第一',
                                           opc: 0.6,
-                                           imgType: 2,
+                                          imgType: 2,
                                         ),
                                       ))),
                               Expanded(
@@ -361,14 +361,14 @@ class _HomePageState extends State<HomePage> {
                                         onTap: () {
                                           // TODO:点击跳转到点击进入对应分类查询到课程列表页面
                                           print('分类id是${varys1[4]['kid']}');
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return CourseList(
-                                            id: varys1[4]['kid'],
-                                            cname:varys1[4]['kindName'],
-                                          );
-                                        }));
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                                  builder: (context) {
+                                            return CourseList(
+                                              id: varys1[4]['kid'],
+                                              cname: varys1[4]['kindName'],
+                                            );
+                                          }));
                                         },
                                         child: Goodsbox(
                                           imgsrc: 'images/courser-bg7.png',
@@ -420,13 +420,14 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击跳转到课程列表页面
-                                        print(0);print('分类id是${varys1[5]['kid']}');
+                                        print(0);
+                                        print('分类id是${varys1[5]['kid']}');
                                         Navigator.push(context,
                                             MaterialPageRoute(
                                                 builder: (context) {
                                           return CourseList(
                                             id: varys1[5]['kid'],
-                                            cname:varys1[5]['kindName'],
+                                            cname: varys1[5]['kindName'],
                                           );
                                         }));
                                       },
@@ -446,13 +447,14 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击跳转到课程列表页面
-                                        print(0);print('分类id是${varys1[6]['kid']}');
+                                        print(0);
+                                        print('分类id是${varys1[6]['kid']}');
                                         Navigator.push(context,
                                             MaterialPageRoute(
                                                 builder: (context) {
                                           return CourseList(
                                             id: varys1[6]['kid'],
-                                            cname:varys1[6]['kindName'],
+                                            cname: varys1[6]['kindName'],
                                           );
                                         }));
                                       },
@@ -472,13 +474,13 @@ class _HomePageState extends State<HomePage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         //TODO:点击跳转到课程列表页面
-                                       print('分类id是${varys1[7]['kid']}');
+                                        print('分类id是${varys1[7]['kid']}');
                                         Navigator.push(context,
                                             MaterialPageRoute(
                                                 builder: (context) {
                                           return CourseList(
                                             id: varys1[7]['kid'],
-                                            cname:varys1[7]['kindName'],
+                                            cname: varys1[7]['kindName'],
                                           );
                                         }));
                                       },
@@ -529,11 +531,10 @@ class _HomePageState extends State<HomePage> {
                                     //课程简介布局；顶部图片 + 底部文字信息等
                                     child: GestureDetector(
                                       onTap: () {
-                                        //TODO:点击进入课程购买--介绍页面
                                         Navigator.push(context,
                                             MaterialPageRoute(
                                                 builder: (context) {
-                                          return CourseDetail();
+                                          return CourseDetail(courseDetail: json.encode(course[0]),);
                                         }));
                                         print(0);
                                       },
@@ -552,8 +553,11 @@ class _HomePageState extends State<HomePage> {
                                     padding: EdgeInsets.only(right: 5.0),
                                     child: GestureDetector(
                                       onTap: () {
-                                        //TODO:点击进入课程购买--介绍页面
-                                        print(0);
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseDetail(courseDetail: json.encode(course[1]),);
+                                        }));
                                       },
                                       child: CourseBox(
                                         imgsrc: course[1]['img'],
@@ -577,16 +581,19 @@ class _HomePageState extends State<HomePage> {
                                       //课程简介布局；顶部图片 + 底部文字信息等
                                       child: GestureDetector(
                                         onTap: () {
-                                          //TODO:点击进入课程购买--介绍页面
-                                          print(0);
+                                          Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseDetail(courseDetail: json.encode(course[2]),);
+                                        }));
                                         },
                                         child: CourseBox(
                                           imgsrc:
-                                              'http://placehold.it/400x200?text=course...',
-                                          title: 'Java并发编程精讲',
+                                              course[2]['img'],
+                                          title: course[2]['cname'],
                                           score: 4.5,
                                           studenNum: 10,
-                                          price: 398.0,
+                                          price: course[2]['price'],
                                         ),
                                       ))),
                               Expanded(
@@ -596,16 +603,19 @@ class _HomePageState extends State<HomePage> {
                                       padding: EdgeInsets.only(right: 5.0),
                                       child: GestureDetector(
                                         onTap: () {
-                                          //TODO:点击进入课程购买--介绍页面
-                                          print(0);
+                                          Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return CourseDetail(courseDetail: json.encode(course[3]),);
+                                        }));
                                         },
                                         child: CourseBox(
                                           imgsrc:
-                                              'http://placehold.it/400x200?text=course...',
-                                          title: 'Java数据结构与算法',
+                                              course[3]['img'],
+                                          title:  course[3]['cname'],
                                           score: 3.5,
                                           studenNum: 10,
-                                          price: 198.0,
+                                          price: course[3]['price'],
                                         ),
                                       ))),
                             ],
@@ -751,24 +761,38 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(8.0), //3像素圆角
       ),
       child: Swiper(
-        itemCount: 4,
-        itemBuilder: _swiperBuilder,
-        //分页指示器
-        pagination: SwiperPagination(
-            alignment: Alignment.bottomRight,
-            margin: const EdgeInsets.fromLTRB(0, 0, 20, 10),
-            builder: DotSwiperPaginationBuilder(
-                color: Colors.white70,
-                activeColor: Colors.redAccent,
-                space: 2,
-                activeSize: 15)),
-        controller: SwiperController(),
-        scrollDirection: Axis.horizontal,
-        autoplay: true,
-        onTap: (index){
-          print('课程id是${carousIds[index]}');
-        }
-      ),
+          itemCount: 4,
+          itemBuilder: _swiperBuilder,
+          //分页指示器
+          pagination: SwiperPagination(
+              alignment: Alignment.bottomRight,
+              margin: const EdgeInsets.fromLTRB(0, 0, 20, 10),
+              builder: DotSwiperPaginationBuilder(
+                  color: Colors.white70,
+                  activeColor: Colors.redAccent,
+                  space: 2,
+                  activeSize: 15)),
+          controller: SwiperController(),
+          scrollDirection: Axis.horizontal,
+          autoplay: true,
+          onTap: (index) {
+            print('课程id是${carousIds[index]}');
+            //通过对应的课id获取到课程信息后跳转到详情页面
+            Http.getData(
+                '/crouseInfo/selectByPrimaryKey',
+                (data) {
+                  print(data);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return CourseDetail(
+                      courseDetail: json.encode(data['data']),
+                    );
+                  }));
+                },
+                params: {'cid': carousIds[index]},
+                errorCallBack: (error) {
+                  print('error:${error}');
+                });
+          }),
     );
   }
 

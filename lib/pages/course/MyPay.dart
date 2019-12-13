@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Global.dart';
+import 'package:projectpractice/common/Http.dart';
+import 'package:projectpractice/pages/course/CourseVieo.dart';
 import 'package:projectpractice/widget/Goodsbox.dart';
+import 'package:projectpractice/widget/LoadResultInfo.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
 
 //我的购买
@@ -28,15 +34,10 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
   //创建滚动监听控制器，赋值给可滚动的组件controle属性就可以监听滚动了
   ScrollController _scrollController = new ScrollController();
   // 数据源
-  List<String> _dataSource = List<String>();
+  var _dataSource = [];
   // 当前加载的页数
   int _pageSize = 0;
 //加载数据
-  void _loadData(int index) {
-    for (var i = 0; i < 15; i++) {
-      _dataSource.add((i + 15 * index).toString());
-    }
-  }
 
   //每次下拉刷新的时候触发
   Future<Null> _onRefresh() {
@@ -44,23 +45,12 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
       print("正在刷新...");
       _pageSize = 0; //重新刷新：分页为0重新请求数据
       _dataSource.clear();
-      setState(() {
-        _loadData(_pageSize);
-      });
+      getMypayCourse();
+      setState(() {});
     });
   }
 
   // 加载更多
-  Future<Null> _loadMoreData() {
-    return Future.delayed(Duration(seconds: 1), () {
-      print("正在加载更多...");
-
-      setState(() {
-        _pageSize++;
-        _loadData(_pageSize);
-      });
-    });
-  }
 
   // 手动调用刷新控件：初始化页面的时候
   showRefreshLoading() {
@@ -70,23 +60,58 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
     });
   }
 
+  getMypayCourse() {
+    Http.getData(
+        '/orderInfo/multiCriteriaQuery',
+        (data) {
+          print(data);
+          _dataSource = [];
+          var sid = Global.user.userInfo.stuid;
+          for (var i = 0; i < data['data'].length; i++) {
+            if (sid == data['data'][i]['stuid']) {
+              print(sid);
+              //根据cid获取对应的课程信息
+              Http.getData(
+                  '/crouseInfo/selectByPrimaryKey',
+                  (data) {
+                    print(data);
+                    if (data['data']['img'] == null ||
+                        !data['data']['img'].contains('http')) {
+                      data['data']['img'] =
+                          'http://placehold.it/400x200?text=course...';
+                    }
+                    _dataSource.add(data['data']);
+                    setState(() {});
+                  },
+                  params: {'cid': data['data'][i]['cid']},
+                  errorCallBack: (error) {
+                    print(error);
+                  });
+            }
+          }
+          setState(() {});
+        },
+        params: {'onpay': 1},
+        errorCallBack: (error) {
+          print(error);
+        });
+  }
+
   @override
   void initState() {
     //创建controller
-    _tabController = TabController(length: tabs.length,vsync: this);
+    _tabController = TabController(length: tabs.length, vsync: this);
     _tabController.addListener(() => _onTabChanged());
     //初始化数据：显示下拉刷新控件 + 获取数据
     showRefreshLoading();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
-          _scrollController.position.maxScrollExtent) {
-        _loadMoreData();
-      }
+          _scrollController.position.maxScrollExtent) {}
     });
     super.initState();
   }
 
-   //切换tabview的时候获取对应发起请求类别的数据
+  //切换tabview的时候获取对应发起请求类别的数据
   _onTabChanged() {
     if (_tabController.index.toDouble() == _tabController.animation.value) {
       //赋值TODO:并更新数据
@@ -106,10 +131,14 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
           centerTitle: true,
           bottom: TabBar(
             controller: _tabController,
-            tabs: tabs.map((e)=>Tab(text: e,)).toList(),
+            tabs: tabs
+                .map((e) => Tab(
+                      text: e,
+                    ))
+                .toList(),
             isScrollable: true,
             labelColor: Colors.red,
-            unselectedLabelColor:Colors.black,
+            unselectedLabelColor: Colors.black,
             indicatorWeight: 2,
             indicatorColor: Colors.red,
             labelStyle: TextStyle(fontSize: 14),
@@ -130,7 +159,7 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
         backgroundColor: Colors.white,
         child: ListView.builder(
           physics: new AlwaysScrollableScrollPhysics(),
-          itemCount: _dataSource.isEmpty ? 0 : _dataSource.length + 1,
+          itemCount: _dataSource.isEmpty ? 1 : _dataSource.length + 1,
           itemBuilder: (BuildContext context, int index) {
             return items(context, index);
           },
@@ -140,7 +169,16 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
   }
 
   Widget items(context, index) {
-    if (index == _dataSource.length) {
+    if (_dataSource.isEmpty) {
+      //空的情况
+      return Container(
+        height: 300,
+        alignment: Alignment.center,
+        child: LoadResultInfo(
+          info: '空空如也',
+        ),
+      );
+    } else if (index == _dataSource.length) {
       return Center(
         child: Padding(
           padding: EdgeInsets.all(10.0),
@@ -148,84 +186,111 @@ class _MyPayState extends State<MyPay> with SingleTickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 4.0,
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-                child: Text('加载中...', style: TextStyle(fontSize: 16.0)),
-              )
+              // SizedBox(
+              //   width: 20,
+              //   height: 20,
+              //   child: CircularProgressIndicator(
+              //     strokeWidth: 4.0,
+              //   ),
+              // ),
+              // Padding(
+              //   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+              //   child: Text('加载中...', style: TextStyle(fontSize: 16.0)),
+              // )
             ],
           ),
         ),
       );
     }
     //课程列表:
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-      height: 100.0,
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            flex: 2,
-            child: Container(
-              height: 90.0,
-              //设置背景颜色加遮罩层
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage('images/courselist-1.jpg'),
-                    fit: BoxFit.cover),
-                borderRadius: BorderRadius.circular(6.0),
+    return GestureDetector(
+      onTap: () {
+        Http.getData(
+            '/videoInfo/selectByCid',
+            (data) {
+              var url;
+              if (data['data'].length == 0) {
+                url = '';
+              } else {
+                url = data['data'][0]['vurl'];
+              }
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return CourseVideo(
+                  url: url,
+                  vidoeInfo: json.encode(
+                    data['data'],
+                  ),
+                  cid: _dataSource[index]['cid'],
+                );
+              }));
+            },
+            params: {'cid': _dataSource[index]['cid']},
+            errorCallBack: (error) {
+              print('error:$error');
+            });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+        height: 100.0,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              flex: 2,
+              child: Container(
+                height: 90.0,
+                //设置背景颜色加遮罩层
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                      image: NetworkImage(_dataSource[index]['img']),
+                      fit: BoxFit.cover),
+                  borderRadius: BorderRadius.circular(6.0),
+                ),
               ),
             ),
-          ),
-          Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Text(
-                      'Java通用型支付+电商平台双系统高级开发工程师课程',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: Color.fromRGBO(0, 0, 0, 1.0),
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(7, 1, 7, 1),
-                      decoration: BoxDecoration(
-                          color: Color.fromRGBO(214, 197, 142, 0.6),
-                          borderRadius: BorderRadius.circular(10.0)),
-                      child: Text(
-                        '分享返现￥14.70',
-                        style:
-                            TextStyle(color: Colors.deepOrange, fontSize: 12.0),
+            Expanded(
+                flex: 5,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 5.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Text(
+                        _dataSource[index]['cname'],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: Color.fromRGBO(0, 0, 0, 1.0),
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text(
-                          '已经全部更新 . 已经阅读至第一章节',
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(7, 1, 7, 1),
+                        decoration: BoxDecoration(
+                            color: Color.fromRGBO(214, 197, 142, 0.6),
+                            borderRadius: BorderRadius.circular(10.0)),
+                        child: Text(
+                          '分享返现￥14.70',
                           style: TextStyle(
-                              color: Color.fromRGBO(168, 168, 168, 1.0),
-                              fontSize: 13.0),
+                              color: Colors.deepOrange, fontSize: 12.0),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ))
-        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            '已经全部更新 . 已经阅读至第一章节',
+                            style: TextStyle(
+                                color: Color.fromRGBO(168, 168, 168, 1.0),
+                                fontSize: 13.0),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ))
+          ],
+        ),
       ),
     );
   }

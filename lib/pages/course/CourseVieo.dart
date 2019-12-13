@@ -4,15 +4,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:fijkplayer/fijkplayer.dart';
+import 'package:projectpractice/common/InfoNotify.dart';
 import 'dart:math';
 import 'package:projectpractice/pages/course/couseInfo/Chapter.dart';
 import 'package:projectpractice/pages/course/couseInfo/CourseDetail.dart';
 import 'package:projectpractice/pages/course/couseInfo/CourseComment.dart';
+import 'package:provider/provider.dart';
 
 //TODO:在视频无法播放的时候全屏模型的时候无法真正的全屏宽度，只能占用一部分。
 
 class CourseVideo extends StatefulWidget {
-  CourseVideo({this.url, this.vidoeInfo,this.cid});
+  CourseVideo({this.url, this.vidoeInfo, this.cid});
   //课程于视频id，这里模拟视频url参数
   final String url; //课程第一节视频地址
   final String vidoeInfo; //该课程的所有视频信息
@@ -39,108 +41,113 @@ class _CourseVideoState extends State<CourseVideo> {
     player.setDataSource(hostNmae + widget.url, autoPlay: true);
   }
 
+  VideoInfoProfider videoInfoProfider = new VideoInfoProfider();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Container(
-          width: double.infinity,
-          height: 230.0,
-          child: FijkView(
-              //!fijkview分为两个区域：容器view区一般是占慢宽度和外层父组件的高度，video显示区域可能会被裁剪导致只占部分区域
-              player: player, //!通过控制fit参数可以控制视频在 FijkView 中的填充裁剪模式。
-              color: Colors.white,
-              fit: FijkFit(
-                aspectRatio: double.infinity, //设置infinity使得视频区于fijkview区域宽高比一致
-              ),
-              //自定义显示ui界面//其中FijkPanelWidgetBuilder 返回的 Widget实际上会在组件树中作为一个stack
-              panelBuilder: (FijkPlayer player, BuildContext context,
-                  Size viewSize, Rect texturePos) {
-                return CustomFijkPanel(
-                    player: player,
-                    buildContext: context,
-                    viewSize: viewSize,
-                    texturePos: texturePos,
-                    videoUrl: widget.url,
-                    videoInfos: videoInfoMap);
-              }),
-        ),
-        //!视频播放区域结束，底部内容切换tab开始
-        /**
+    return ChangeNotifierProvider<VideoInfoProfider>(
+      builder: (_) => videoInfoProfider,
+      child: Scaffold(
+          body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: double.infinity,
+            height: 230.0,
+            child: FijkView(
+                //!fijkview分为两个区域：容器view区一般是占慢宽度和外层父组件的高度，video显示区域可能会被裁剪导致只占部分区域
+                player: player, //!通过控制fit参数可以控制视频在 FijkView 中的填充裁剪模式。
+                color: Colors.white,
+                fit: FijkFit(
+                  aspectRatio:
+                      double.infinity, //设置infinity使得视频区于fijkview区域宽高比一致
+                ),
+                //自定义显示ui界面//其中FijkPanelWidgetBuilder 返回的 Widget实际上会在组件树中作为一个stack
+                panelBuilder: (FijkPlayer player, BuildContext context,
+                    Size viewSize, Rect texturePos) {
+                  return CustomFijkPanel(
+                      player: player,
+                      buildContext: context,
+                      viewSize: viewSize,
+                      texturePos: texturePos,
+                      videoUrl: widget.url,
+                      videoInfos: videoInfoMap);
+                }),
+          ),
+          //!视频播放区域结束，底部内容切换tab开始
+          /**
          *!由于两层嵌套column里面无法使用listveiw，所以视频底部的tab栏 + 带listview的子页面我打算放在这里的同一层column
          */
-        //tab栏部分
-        Container(
-            height: 54.0,
-            decoration: BoxDecoration(color: Colors.white, boxShadow: [
-              BoxShadow(
-                  color: Colors.black12,
-                  offset: Offset(0.0, 2.0),
-                  blurRadius: 4.0)
-            ]),
-            //tab栏
-            child: DefaultTabController(
-              length: 3,
-              child: Container(
-                child: TabBar(
-                  labelColor: Colors.red,
-                  unselectedLabelColor: Colors.black,
-                  indicatorWeight: 2,
-                  indicatorColor: Colors.red,
-                  labelStyle: TextStyle(fontSize: 14),
-                  tabs: <Widget>[
-                    Tab(
-                        text: '章节',
-                        icon: GestureDetector(
-                          onTap: () {
-                            print('章节');
-                            setState(() {
-                              _selectIndex = 0;
-                            });
-                          },
-                          child: Icon(
-                            Icons.book,
-                            size: 10.0,
-                          ),
-                        )),
-                    Tab(
-                        text: '详情',
-                        icon: GestureDetector(
-                          onTap: () {
-                            print('详情');
-                            setState(() {
-                              _selectIndex = 1;
-                            });
-                          },
-                          child: Icon(
-                            Icons.book,
-                            size: 10.0,
-                          ),
-                        )),
-                    Tab(
-                        text: '评论',
-                        icon: GestureDetector(
-                          onTap: () {
-                            print('评论');
-                            setState(() {
-                              _selectIndex = 2;
-                            });
-                          },
-                          child: Icon(
-                            Icons.book,
-                            size: 10.0,
-                          ),
-                        ))
-                  ],
+          //tab栏部分
+          Container(
+              height: 54.0,
+              decoration: BoxDecoration(color: Colors.white, boxShadow: [
+                BoxShadow(
+                    color: Colors.black12,
+                    offset: Offset(0.0, 2.0),
+                    blurRadius: 4.0)
+              ]),
+              //tab栏
+              child: DefaultTabController(
+                length: 3,
+                child: Container(
+                  child: TabBar(
+                    labelColor: Colors.red,
+                    unselectedLabelColor: Colors.black,
+                    indicatorWeight: 2,
+                    indicatorColor: Colors.red,
+                    labelStyle: TextStyle(fontSize: 14),
+                    tabs: <Widget>[
+                      Tab(
+                          text: '章节',
+                          icon: GestureDetector(
+                            onTap: () {
+                              print('章节');
+                              setState(() {
+                                _selectIndex = 0;
+                              });
+                            },
+                            child: Icon(
+                              Icons.book,
+                              size: 10.0,
+                            ),
+                          )),
+                      Tab(
+                          text: '详情',
+                          icon: GestureDetector(
+                            onTap: () {
+                              print('详情');
+                              setState(() {
+                                _selectIndex = 1;
+                              });
+                            },
+                            child: Icon(
+                              Icons.book,
+                              size: 10.0,
+                            ),
+                          )),
+                      Tab(
+                          text: '评论',
+                          icon: GestureDetector(
+                            onTap: () {
+                              print('评论');
+                              setState(() {
+                                _selectIndex = 2;
+                              });
+                            },
+                            child: Icon(
+                              Icons.book,
+                              size: 10.0,
+                            ),
+                          ))
+                    ],
+                  ),
                 ),
-              ),
-            )),
+              )),
 
-        Expanded(child: showView())
-      ],
-    ));
+          Expanded(child: showView())
+        ],
+      )),
+    );
   }
 
   //!每次销毁页面的时候把视频销毁
@@ -153,25 +160,34 @@ class _CourseVideoState extends State<CourseVideo> {
   //根据点击不同的tab切换不同的tabview
   Widget showView() {
     if (_selectIndex == 0) {
-      return Chapter(
-        id: 1,
-        videoInfo: widget.vidoeInfo,
-        changeVideo: (vurl, title) {
-          print('新的播放地址$vurl');
-          print('新的视频标题$title');
-          //更换新的视频播放
-          var hostNmae = 'http://10.0.2.2:8088/';
-          player.reset().then((info) {
-            player.setDataSource(hostNmae + vurl, autoPlay: true);
-          }).catchError((err) {
-            print('载入出错...');
-          });
-        },
-      );
+      return Consumer<VideoInfoProfider>(builder: (_, videoModel, __) {
+        return Chapter(
+          id: 1,
+          videoInfo: widget.vidoeInfo,
+          changeVideo: (vurl, index) {
+            print(videoModel.title);
+            print('新的播放地址$vurl');
+            print(videoInfoMap[index - 1]['title']);
+            videoModel.changeTitle(videoInfoMap[index - 1]['title']);
+            //更换新的视频播放
+            //todo:
+            var hostNmae = 'http://10.0.2.2:8088/';
+            player.reset().then((info) {
+              player.setDataSource(hostNmae + vurl, autoPlay: true);
+            }).catchError((err) {
+              print('载入出错...');
+            });
+          },
+        );
+      });
     } else if (_selectIndex == 1) {
-      return CourseDetail(cid: widget.cid,);
+      return CourseDetail(
+        cid: widget.cid,
+      );
     } else {
-      return CourseComment();
+      return CourseComment(
+        cid: widget.cid,
+      );
     }
   }
 }
@@ -504,21 +520,23 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                   },
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 0.0, horizontal: 0.0),
-                                  child: Text(
-                                    widget.videoInfos.length == 0
-                                        ? '暂无视频'
-                                        : widget.videoInfos[currentVideoIndex]
-                                            ['title'],
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17.0),
-                                  ),
-                                ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 0.0, horizontal: 0.0),
+                                    child: Consumer<VideoInfoProfider>(
+                                        builder: (_, videoModel, __) {
+                                      return Text(
+                                        widget.videoInfos.length == 0
+                                            ? '暂无视频' : videoModel.title == '视频状态管理'?
+                                            widget.videoInfos[
+                                                currentVideoIndex]['title'] : videoModel.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 17.0),
+                                      );
+                                    })),
                               ],
                             ),
                           ),

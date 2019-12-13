@@ -275,6 +275,7 @@ class _itemsState extends State<Items> {
                       title: '',
                       introduce: '',
                       opc: 0.0,
+                      imgType: 2,
                     ),
                   ),
                   Expanded(

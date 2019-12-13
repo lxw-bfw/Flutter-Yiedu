@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projectpractice/common/Http.dart';
 import 'package:projectpractice/widget/GradientBox.dart';
 //类别展示页面：其中类别显示我们使用grid网格布局使用GridView
 
@@ -18,13 +19,36 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
   //一级类别数组:这里需要将json数组转为dart对象,渲染左侧导航栏
   List<String> vary1 = [];
   List<bool> selects = []; //选中状态切换
+  List<Widget> varySecond = [];
+  var secondInfo = [];
+  String currenVaryName = '获取中...';
 
   @override
   void initState() {
     super.initState();
     //初始化状态
     //获取一级类别
-    getVary1();
+    getSecodVary();
+  }
+
+  //获取不大与10个的二级类别
+  getSecodVary(){
+    Http.getData(
+      '/kindInfo/getHigherLevel',
+      (data){
+        print(data);
+        secondInfo = data['data'];
+        currenVaryName = secondInfo[0]['kindName'];
+        setState(() {
+          
+        });
+        getVary1();
+      },
+      params: {'level':3,'pageNum':1,'pageSize':10},
+      errorCallBack: (error){
+        print('error:$error');
+      }
+    );
   }
 
   @override
@@ -38,7 +62,7 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
         children: <Widget>[
           //左边类别切换栏
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Container(
               padding: EdgeInsets.only(top: 10.0),
               height: double.infinity, //高度占据全屏
@@ -48,13 +72,13 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   //TODO:根据后台获取的一级类别数组数据生成widget数组，后台传过来的是json字符串。
-                  children: getVary1()),
+                  children: varySecond),
             ),
           ), //左边类别切换栏结束
 
           //右边对应的二级类别
           Expanded(
-              flex: 5,
+              flex: 6,
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
                 child: Column(
@@ -64,7 +88,7 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
                      padding: EdgeInsets.only(bottom: 20.0),
                      child:  GradientBox(
                       heigth: 80.0,
-                      title: '前端工程师',
+                      title: currenVaryName,
                       introduce: '小白也可以学好',
                       leftColor: Colors.orange,
                       rightColor: Colors.deepOrange,
@@ -289,20 +313,23 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
   //TODO:获取一级类别
   List<Widget> getVary1() {
     vary1 = [];
-    for (var i = 0; i < 10; i++) {
-      vary1.add('类别' + i.toString());
+    for (var i = 0; i < secondInfo.length; i++) {
+      vary1.add(secondInfo[i]['kindName']);
       if (i == 0) {
         selects.add(true);
+       
       } else {
         selects.add(false);
       }
     }
-    //生成多个widget
-    List<Widget> list1 = [];
+    varySecond = [];
     for (var i = 0; i < vary1.length; i++) {
-      list1.add(getWidgetVaryItem1(vary1[i], i));
+      varySecond.add(getWidgetVaryItem1(vary1[i], i));
     }
-    return list1;
+    setState(() {
+      
+    });
+    return varySecond;
   }
 
   //渲染单个类别
@@ -311,14 +338,18 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
         //TODO:点击一级类别，获取对应的二级类别
         onTap: () {
           print(index);
+          currenVaryName = secondInfo[index]['kindName'];
           setState(() {
+            
+          });
             for (var i = 0; i < selects.length; i++) {
               if (selects[i]) {
                 selects[i] = false;
               }
             }
             selects[index] = true;
-          });
+            getVary1();
+
         },
         child: Padding(
           padding: EdgeInsets.only(bottom: 25.0),
@@ -335,7 +366,7 @@ class _VaryPageState extends State<VaryPage> with AutomaticKeepAliveClientMixin 
                   item,
                   style: TextStyle(
                       color: selects[index] ? Colors.red : Colors.grey,
-                      fontSize: 16.0),
+                      fontSize: 14.0),
                 ),
               )
             ],
