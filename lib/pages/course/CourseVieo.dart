@@ -324,6 +324,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
       case FijkState.error:
         //重置视频reset
         setState(() {
+          print('错误错误info${FijkState.error}');
           _playing = false;
           _isError = true;
           _isComplete = false;
@@ -742,7 +743,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                 player.reset().then((info) {
                   //重新载入数据后自动播放
                   // print(info);
-                  player.setDataSource(widget.videoUrl, autoPlay: true);
+                  player.setDataSource('http://10.0.2.2:8088/'+ widget.videoUrl, autoPlay: true);
                 }).catchError((err) {
                   print('载入出错...');
                 });

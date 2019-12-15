@@ -29,6 +29,8 @@ class _CourseCommentState extends State<CourseComment> {
   int totalSize = 0;
   //判断是否是最后一条数据
   bool isEnd = false;
+  //判断是狗需要显示加载更多
+  bool isShow = false;
 
   //评论text
   String commonText;
@@ -101,6 +103,7 @@ class _CourseCommentState extends State<CourseComment> {
       if (_scrollController.position.pixels ==
           _scrollController.position.maxScrollExtent) {
         print('4324234234234');
+        isShow = true;
         _loadMoreData();
       }
     });
@@ -214,7 +217,7 @@ class _CourseCommentState extends State<CourseComment> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                if (!isEnd)
+                if (!isEnd && isShow)
                   SizedBox(
                     width: 20,
                     height: 20,
@@ -224,9 +227,9 @@ class _CourseCommentState extends State<CourseComment> {
                   ),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-                  child: isEnd
+                  child: isEnd 
                       ? Text('已经到底了...', style: TextStyle(fontSize: 16.0))
-                      : Text('加载中...', style: TextStyle(fontSize: 16.0)),
+                      : isShow ? Text('加载中...', style: TextStyle(fontSize: 16.0)) : Text(''),
                 )
               ],
             ),

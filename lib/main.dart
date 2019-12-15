@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projectpractice/common/Global.dart';
 import 'package:projectpractice/common/InfoNotify.dart';
 import 'package:projectpractice/models/index.dart';
+import 'package:projectpractice/pages/Qidong.dart';
 import 'package:projectpractice/pages/tabView/UnLogin.dart';
 import 'package:provider/provider.dart';
 import 'package:projectpractice/pages/tabView/HomePage.dart';
@@ -36,7 +37,7 @@ class MyApp extends StatelessWidget {
         brightness: curBrightness, //指定亮度主题，有白色/黑色两种可选.:夜间模式与白天模式的切换,默认是白天模式
         primaryColor:curTheme, // 状态栏颜色可以选择改变，状态管理
       ),
-      home: FramePage(),
+      home: Qidong(),
     );
   }
 }
