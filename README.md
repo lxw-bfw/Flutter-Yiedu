@@ -4,7 +4,7 @@
  * @Author: lxw
  * @Date: 2019-11-18 09:28:11
  * @LastEditors: lxw
- * @LastEditTime: 2020-03-27 17:02:43
+ * @LastEditTime: 2020-03-28 01:19:09
  -->
 ## 易教育App —— flutter开发的简单在线教育平台安卓客户端
 
@@ -237,13 +237,136 @@ API密钥 账户中心-账户设置-API安全-设置API密钥
    ```
   
   ### 项目页面、业务逻辑等开发相关
-  > 页面：顶部视频播放器窗口 + 中间tab切换 + 底部tab切换后渲染的不同ui页面：评论、详情、课程章节
 
-  #### 难点
-  1. 视频播放器(自定义需求)
-    - 实现一个自定义视频播放器：自定义视频播放器ui页面实现 + 视频播放逻辑
-  2. tab切换 + 不同页面渲染(局部渲染)
+  1. 视频播放相关
   
+  - 自定义视频播放器ui界面——封装了一个flutter 视频播放器提供项目使用[地址](link)
+
+  - 播放器难点解决相关介绍
+
+  1. 视频播放器本身
+
+   #### 需求与难点
+  1.1 flutter第三方的视频播放插件比较少，支持自定义ui界面的更是很少，而第三方插件中没有找到可以满足自己的视频播放界面需求的一款插件
+  1.2 视频播放ui界面自定义，也就是的播放视频逻辑借助第三方播放插件，而相关的ui界面全部由你自己来实现，需要考虑播放器界面的尺寸，ui控件（包括播放暂替开始按钮、进度条、全屏按钮、标题栏、其他功能按钮）需要响应式改变布局,主要是视频全屏非全屏切换的时候，视频界面上方的控件要响应式布局，保证布局不错乱
+  1.3 视频播放控件的所有功能需要自己调接口封装比如播放按钮的播放切换、进度条切花进度，全屏切换、手势控制播放视频，比如双击暂停，向上向下改变音量、亮度等等。
+  1.4 视频全屏的时候，播放器界面类重置了，导致部分数据属性也重置了无法监听到视频切换全屏事件
+
+  #### 解决
+  1.1 使用`FijkPlayer`插件提供视频播放器底层的相关接口之外，还支持自定义视频播放器ui
+  1.2 播放器界面尺寸自适应和控件布局自适应解决方案是； 播放界面的宽度；始终定义为最大尺寸也就是沾满全屏，而宽度部分的控件比如底控件栏如果采用使futter弹性布局，使布局其自适应全屏和非全屏
+  1.3 视频界面高度比较方便的解决方案，视频全屏的时候，设备的宽度既是视频界面的高度，所以可以一开始获取设备的宽度来设置视频的高度，这样切换视频全屏非全屏可以整体实现布局的响应式无需要再额外监听全屏再单独设置样式
+  1.4 无法监听视频全屏事件，导致可能出现部分错误无法及时处理，此时采用折中方案进入全屏捕获到错误的时候，暂停播放，提示用户重新点击播放按钮，即可恢复。
+
+
+  2. 视频播放页面组合构成的难点： 视频播放器 + flutter tab切换下方显示不同的组件内容（评论、详情、章节），如下图红色部分
+  <img src='./images/readme1.jpg' />
+  > 难点说明，使用flutter的TabBar组件来实现视频播放页面的tab切换，就类似b站那样，但是问题是flutter提供两种使用Tabar方式，如果是是使用自定义controler方式，你可以监听到TabBar切换，以便在用户切换tab的时候做处理，但问题是这种方式只能切换整个完整的页面，而且tab菜单的位置无法自定义，也就是没有办法让它位于视频播放器的底部。所以我采用了`DefaultTabController`,它可以自定义tab菜单栏位置。当然肯定还有更好的解决方案只是由于时间问题我没有再去深入研究，加上自己主要方向还web前端开方。使用`DefaultTabController`可以使得tab菜单由于我们视频播放器器下面，同时可以不采用默认的切换整个页面，只是点击不同的tab按钮，就在下面局部更新组件，类似b站视频播放非全屏的页面。所以我必须监听每一个tab的切换，点了那一个我根据他的索引为他显示对应的组件布局。单 此时一个问题是`DefaultTabController`我无法监听tab的切换，比如用户一开始显示章节部分后面他点击了详情按钮，但是此时我无法监听到，也就是无法在下方显示详情组件。此时一个折中的方法是在每一个tab的配置参数那里的icon 属性加入一个手势事件，监听点击，最终实现点击切换下面的显示不同的组件。
+
+
+
+- 解决Flutter出bug的时候直接在页面显示红屏的异常??
+> Flutter出现bug的时候不是直接闪退而是直接在页面显然红色异常，要是上线的话，对用户体验来说比之际闪退还差，于是上线的生产环境需要解决flutter的这个问题
+> 使用flutter开发部署上线的时候的时候虽然可以使用相关方法进行错误捕获上传，代替默认出错打印到控制的行为，但是无法取消flutter出某些bug的时候直接显示红色信息到当前页面，查阅相关资料后发现该行为产生的原因如下：
+
+> Flutter 框架为我们在很多关键的方法进行了异常捕获，比如当我们布局发生越界或不和规范时，Flutter就会在当前页面自动覆盖一个错误界面，没错这就是那个很不美观的红色异常，而实现这一点是因为Flutter已经在执行build方法时添加了异常捕获，最终的源码如下：
+```dart
+@override
+void performRebuild() {
+ ...
+  try {
+    //无隐藏执行build方法，显示我们正常页面  
+    built = build();
+  } catch (e, stack) {
+    // 有异常时则显示`ErrorWidget.builder(_debugReportException('building $this', e, stack))`返回的错误提示组件 
+    built = ErrorWidget.builder(_debugReportException('building $this', e, stack));
+  } 
+  ...
+} 
+```
+所以要想不要显示红色隐藏，只要重写` ErrorWidget.builder `方法即可
+```dart
+ ErrorWidget.builder = (FlutterErrorDetails flutterErrorDetails){
+    print(flutterErrorDetails.toString());
+    return Center(
+      child: Text("请重新加载"),
+    );
+  };
+```
+
+
+> 两种解决方案：
+1. 报错后进入自定义错误页面
+![](https://upload-images.jianshu.io/upload_images/14121842-8efc05e9fba1b217.png?imageMogr2/auto-orient/strip|imageView2/2/w/686/format/webp)
+2. 但是这里并不能解决本项目的问题，本项目是需求报错的时候不要进入错误页面也不要显示红色的错误信息在页面上，于是继续查找文档，踩坑，
+
+- flutter 错误捕获和生成日志，作为一个完整的app，经常有许多 直接看这个，写进简历里面，错误的处理以及上传也是一个app框架设计需要考虑的，这属于框架部分。https://www.jianshu.com/p/4d7cd029f0fe  https://zhuanlan.zhihu.com/p/86515127  https://www.jianshu.com/p/4d7cd029f0fe
+
+实现方式，main入口函数初始化app的时候加入
+```dart
+
+void collectLog(String line){
+    // ... //收集日志
+    print(line)
+}
+void reportErrorAndLog(FlutterErrorDetails details){
+    // ... //上报错误和日志逻辑
+    print(details);
+}
+
+FlutterErrorDetails makeDetails(Object obj, StackTrace stack){
+    // ...// 构建错误信息
+}
+
+// 使用assert 来区分生产环境和开放环境
+bool get isInDebugMode {
+  // Assume you're in production mode.
+  bool inDebugMode = false;
+
+  //assert只有在开发环境才有效，生产环境这句代码会被忽略
+  assert(inDebugMode = true);
+
+  return inDebugMode;
+}
+
+void main() {
+
+FlutterError.onError = (FlutterErrorDetails details) {
+  
+  if (isInDebugMode) {
+      // debug模式直接打印在控制台 
+      
+      FlutterError.dumpErrorToConsole(details);
+    } else {
+      // 在生产模式下,重定向到 runZone 中处理
+      
+      Zone.current.handleUncaughtError(details.exception, details.stack);
+    }
+    reportErrorAndLog(details);
+  };
+
+  runZoned(
+    () => Global.init().then((e) => runApp(ChangeNotifierProvider<UserModel>.value(
+          notifier: UserModel(),
+          child: MyApp(),
+        ))),
+    zoneSpecification: ZoneSpecification(
+      print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+        collectLog(line); //手机日志
+      },
+    ),
+    onError: (Object obj, StackTrace stack) {
+      var details = makeDetails(obj, stack);
+      reportErrorAndLog(details);
+    },
+  );
+
+
+}
+```
+
+
+- 复杂布局和数据处理更新ui？
 
 
 

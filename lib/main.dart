@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:projectpractice/common/Global.dart';
 import 'package:projectpractice/common/InfoNotify.dart';
 import 'package:projectpractice/models/index.dart';
@@ -14,28 +15,89 @@ import 'package:projectpractice/pages/Search.dart';
 //app每次启动要重新初始化全局变量：Global.init
 // 全局状态管理应用再整个app：provider
 //使用 Provider.of<T>(context) 获取指定类型的数据。
-void main() =>
-    Global.init().then((e) => runApp(ChangeNotifierProvider<UserModel>.value(
+// release 模式下使用全局捕获错误，上报错误和日志逻辑
+
+void collectLog(String line){
+    // ... //收集日志
+    // print('linfjdfjfdlfjlsj');
+}
+void reportErrorAndLog(FlutterErrorDetails details){
+    // ... //上报错误和日志逻辑
+    print(details);
+}
+
+FlutterErrorDetails makeDetails(Object obj, StackTrace stack){
+    // ...// 构建错误信息
+}
+
+// 使用assert 来区分生产环境和开放环境
+bool get isInDebugMode {
+  // Assume you're in production mode.
+  bool inDebugMode = false;
+
+  //assert只有在开发环境才有效，生产环境这句代码会被忽略
+  assert(inDebugMode = true);
+
+  return inDebugMode;
+}
+
+void main() {
+
+FlutterError.onError = (FlutterErrorDetails details) {
+  
+  if (isInDebugMode) {
+      // debug模式直接打印在控制台 
+      
+      FlutterError.dumpErrorToConsole(details);
+    } else {
+      // 在生产模式下,重定向到 runZone 中处理
+      
+      Zone.current.handleUncaughtError(details.exception, details.stack);
+    }
+    reportErrorAndLog(details);
+  };
+
+  runZoned(
+    () => Global.init().then((e) => runApp(ChangeNotifierProvider<UserModel>.value(
           notifier: UserModel(),
           child: MyApp(),
-        )));
+        ))),
+    zoneSpecification: ZoneSpecification(
+      print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+        collectLog(line); //手机日志
+      },
+    ),
+    onError: (Object obj, StackTrace stack) {
+      var details = makeDetails(obj, stack);
+      reportErrorAndLog(details);
+    },
+  );
+
+
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+   
     // 获取User信息状态管理UserModel类
     UserModel userModel = Provider.of<UserModel>(context);
     // 获取用户的主题设置，如果为null就设置默认值。下次通过UserMOdel更改之后重新绘制这里
-    Color curTheme = userModel.user.theme==null?  Colors.blue : Color(userModel.user.theme);
-    Brightness curBrightness =
-        userModel.user.brightnessStyle!=null ? userModel.user.brightnessStyle=='dark'? Brightness.dark : Brightness.light : Brightness.light ;
+    Color curTheme = userModel.user.theme == null
+        ? Colors.blue
+        : Color(userModel.user.theme);
+    Brightness curBrightness = userModel.user.brightnessStyle != null
+        ? userModel.user.brightnessStyle == 'dark'
+            ? Brightness.dark
+            : Brightness.light
+        : Brightness.light;
     return MaterialApp(
       title: '易教育',
       //!全局配置导航栏主题：主题更新需要。
       theme: ThemeData(
         brightness: curBrightness, //指定亮度主题，有白色/黑色两种可选.:夜间模式与白天模式的切换,默认是白天模式
-        primaryColor:curTheme, // 状态栏颜色可以选择改变，状态管理
+        primaryColor: curTheme, // 状态栏颜色可以选择改变，状态管理
       ),
       home: Qidong(),
     );
@@ -60,12 +122,12 @@ class _FramePageState extends State<FramePage>
     initialPage: 0,
   );
 
- //登录展示的tabview
+  //登录展示的tabview
   List<Widget> _pages = [
     //添加需要显示的页面
     HomePage(),
     VaryPage(),
-    MyCourse(),//我的学习需要根据登录状态显示不同页面
+    MyCourse(), //我的学习需要根据登录状态显示不同页面
     PersonPage(),
   ];
   //未登录展示的tabview
@@ -73,10 +135,9 @@ class _FramePageState extends State<FramePage>
     //添加需要显示的页面
     HomePage(),
     VaryPage(),
-    UnLogin(),//我的学习需要根据登录状态显示不同页面
+    UnLogin(), //我的学习需要根据登录状态显示不同页面
     PersonPage(),
   ];
-
 
   //state生命周期中的一个：做一些一次性操作，初始化什么的
   @override
@@ -87,7 +148,7 @@ class _FramePageState extends State<FramePage>
 // 构建ui界面，这里我需要对顶部导航栏appBar做一些自定义实现我们需要的搜索框还有...
   @override
   Widget build(BuildContext context) {
-      UserModel userModel = Provider.of<UserModel>(context);
+    UserModel userModel = Provider.of<UserModel>(context);
     return Scaffold(
       appBar: PreferredSize(
         preferredSize:
@@ -101,7 +162,7 @@ class _FramePageState extends State<FramePage>
             title: GestureDetector(
               onTap: () {
                 //点击进入使用 searchDelegate实现的搜索页面
-                 showSearch(context: context,delegate: SearchBarDelegate());
+                showSearch(context: context, delegate: SearchBarDelegate());
               },
               child: Container(
                 margin: EdgeInsets.only(left: 13.0),
@@ -157,19 +218,27 @@ class _FramePageState extends State<FramePage>
         type: BottomNavigationBarType
             .fixed, //底部导航栏的类型，有fixed和shifting两个类型，显示效果不一样，使用fixed默认图标会显示对应状态颜色比如没有选择或者是选择
         currentIndex: _selectIndex,
-        fixedColor:Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme),
+        fixedColor: Provider.of<UserModel>(context).user.theme == null
+            ? Colors.blue
+            : Color(Provider.of<UserModel>(context).user.theme),
         onTap: _onItemTapped,
       ),
-      body: PageView(controller: _controller, children: userModel.isLogin? _pages:_unLoginpages),
+      body: PageView(
+          controller: _controller,
+          children: userModel.isLogin ? _pages : _unLoginpages),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.palette),
-        backgroundColor:Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme),
+        backgroundColor: Provider.of<UserModel>(context).user.theme == null
+            ? Colors.blue
+            : Color(Provider.of<UserModel>(context).user.theme),
         onPressed: () {
           //TODO:弹出菜单(测试)，建议是跳转路由页面，跳转到一个选择主题颜色页面
           List<Color> selectColrs = Global.themes;
           List<Widget> options = [];
           UserModel userModel = Provider.of<UserModel>(context);
-          Color curTheme1 = Provider.of<UserModel>(context).user.theme == null? Colors.blue : Color(Provider.of<UserModel>(context).user.theme);
+          Color curTheme1 = Provider.of<UserModel>(context).user.theme == null
+              ? Colors.blue
+              : Color(Provider.of<UserModel>(context).user.theme);
           for (var i = 0; i < selectColrs.length; i++) {
             var sl = new SimpleDialogOption(
               child: ListTile(
@@ -185,7 +254,14 @@ class _FramePageState extends State<FramePage>
               onPressed: () {
                 // options[i].
                 //选择主题颜色，通知userModel更新：
-                var colors = [0xffe91e63,0xff2196f3,0xff00bcd4,0xffffc107,0xff4caf50,0xffcddc39];
+                var colors = [
+                  0xffe91e63,
+                  0xff2196f3,
+                  0xff00bcd4,
+                  0xffffc107,
+                  0xff4caf50,
+                  0xffcddc39
+                ];
 
                 print(selectColrs[i]);
                 User user1 = Global.user;

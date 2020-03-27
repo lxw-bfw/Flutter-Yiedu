@@ -23,7 +23,7 @@ class CourseVideo extends StatefulWidget {
   _CourseVideoState createState() => _CourseVideoState();
 }
 
-class _CourseVideoState extends State<CourseVideo>  {
+class _CourseVideoState extends State<CourseVideo> {
   final FijkPlayer player = FijkPlayer();
   int _selectIndex = 0;
   var videoInfoMap;
@@ -108,7 +108,7 @@ class _CourseVideoState extends State<CourseVideo>  {
                             },
                             child: Icon(
                               Icons.book,
-                              size: 18.0,
+                              size: 20.0,
                             ),
                           )),
                       Tab(
@@ -122,7 +122,7 @@ class _CourseVideoState extends State<CourseVideo>  {
                             },
                             child: Icon(
                               Icons.book,
-                              size: 18.0,
+                              size: 20.0,
                             ),
                           )),
                       Tab(
@@ -136,7 +136,7 @@ class _CourseVideoState extends State<CourseVideo>  {
                             },
                             child: Icon(
                               Icons.book,
-                              size: 18.0,
+                              size: 20.0,
                             ),
                           ))
                     ],
@@ -173,7 +173,7 @@ class _CourseVideoState extends State<CourseVideo>  {
             //todo:
             var hostNmae = 'http://47.103.223.248:8080/YIedu/';
             player.reset().then((info) {
-              player.setDataSource(hostNmae + widget.url, autoPlay: true);
+              player.setDataSource(hostNmae + vurl, autoPlay: true);
             }).catchError((err) {
               print('载入出错...');
             });
@@ -364,6 +364,16 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
 
   @override
   Widget build(BuildContext context) {
+    ErrorWidget.builder = (FlutterErrorDetails flutterErrorDetails) {
+      print(flutterErrorDetails.toString());
+      return Center(
+        child: Text(
+          "视频播放中",
+          style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15.0),
+        ),
+      );
+    };
     // texturePos 可能超出 viewSize 大小，所以先进行大小约束。
     Rect rect = Rect.fromLTRB(
         max(0.0, widget.texturePos.left), //视频相对FijkView位置左边
@@ -386,7 +396,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                   //视频底部控件父层。根据全屏和非全屏控制局部ui widget,使用三元表达式
                   Container(
                       width: double.infinity,
-                      height: _isScreen ? 401.0 : 230.0,
+                      height: _isScreen ? 370.0 : 230.0,
                       alignment: Alignment.bottomLeft,
                       //视频底部控件
                       child: Container(
@@ -399,8 +409,8 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                           // crossAxisAlignment: CrossAxisAlignment.end,
                           //底部播放控制按钮，进度条，全屏播放按钮
                           children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.only(top: 0.0),
+                            Expanded(
+                              flex: 1,
                               child: IconButton(
                                 icon: Icon(
                                   _playing ? Icons.pause : Icons.play_arrow,
@@ -424,64 +434,68 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                 },
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 0.0),
+                            Expanded(
+                              flex: 1,
                               child: Text(
                                 curTime,
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 14.0),
+                                    color: Colors.white, fontSize: 13.0),
                               ),
                             ),
-                            Container(
-                              margin: const EdgeInsets.only(top: 0.0),
-                              width: _isScreen ? 550.0 : 240.0,
-                              child: Slider(
-                                value: _value, //!表示当前进度条的处于的进度位置，单位是秒
-                                min: 0,
-                                max: slideMaxNum, //最大值，根据视频的时长而定
-                                onChanged: (newValue) {
-                                  //TODO:用户手动改变视频播放进度
-                                  setState(() {
-                                    _value = newValue;
-                                  });
-                                  //拖动进度条，改变视频进度，只能在视频播放的情况下调用
-                                  if (widget.player.value.state ==
-                                          FijkState.started ||
-                                      widget.player.value.state ==
-                                          FijkState.prepared ||
-                                      widget.player.value.state ==
-                                          FijkState.paused ||
-                                      widget.player.value.state ==
-                                          FijkState.completed) {
-                                    int position = newValue.toInt(); //去掉小数转int
-                                    widget.player.seekTo(position * 1000);
-                                  }
-                                },
-                                onChangeStart: (startValue) {
-                                  //进度条开始
-                                },
-                                onChangeEnd: (endValue) {
-                                  //进度条结束
-                                },
-                                label: '$_value dollars',
-                                semanticFormatterCallback: (newValue) {
-                                  return '${newValue.round()} dollars';
-                                },
-                                activeColor: Color.fromRGBO(206, 14, 14, 1.0),
-                                inactiveColor:
-                                    Color.fromRGBO(244, 244, 244, 0.5),
+                            Expanded(
+                              flex: 6,
+                              child: Container(
+                                margin: const EdgeInsets.only(top: 0.0),
+                                // width: _isScreen ? 520.0 : 220.0,
+                                child: Slider(
+                                  value: _value, //!表示当前进度条的处于的进度位置，单位是秒
+                                  min: 0,
+                                  max: slideMaxNum, //最大值，根据视频的时长而定
+                                  onChanged: (newValue) {
+                                    //TODO:用户手动改变视频播放进度
+                                    setState(() {
+                                      _value = newValue;
+                                    });
+                                    //拖动进度条，改变视频进度，只能在视频播放的情况下调用
+                                    if (widget.player.value.state ==
+                                            FijkState.started ||
+                                        widget.player.value.state ==
+                                            FijkState.prepared ||
+                                        widget.player.value.state ==
+                                            FijkState.paused ||
+                                        widget.player.value.state ==
+                                            FijkState.completed) {
+                                      int position =
+                                          newValue.toInt(); //去掉小数转int
+                                      widget.player.seekTo(position * 1000);
+                                    }
+                                  },
+                                  onChangeStart: (startValue) {
+                                    //进度条开始
+                                  },
+                                  onChangeEnd: (endValue) {
+                                    //进度条结束
+                                  },
+                                  label: '$_value dollars',
+                                  semanticFormatterCallback: (newValue) {
+                                    return '${newValue.round()} dollars';
+                                  },
+                                  activeColor: Color.fromRGBO(206, 14, 14, 1.0),
+                                  inactiveColor:
+                                      Color.fromRGBO(244, 244, 244, 0.5),
+                                ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 0.0),
+                            Expanded(
+                              flex: 1,
                               child: Text(
                                 videoTime,
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 14.0),
+                                    color: Colors.white, fontSize: 13.0),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(5.0, 0, 0, 0),
+                            Expanded(
+                              flex: 1,
                               child: IconButton(
                                 icon: Icon(
                                   _isScreen
@@ -497,7 +511,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                   } else {
                                     //进入全屏
                                     setState(() {
-                                     isUserProvider = false; 
+                                      isUserProvider = false;
                                     });
                                     player.pause();
                                     player.enterFullScreen();
@@ -516,14 +530,14 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                       child: Row(
                         children: <Widget>[
                           Expanded(
-                            flex: 1,
+                            flex: 4,
                             child: Row(
                               children: <Widget>[
                                 IconButton(
                                   icon: Icon(
                                     Icons.chevron_left,
                                     color: Colors.white,
-                                    size: 40.0,
+                                    size: 35.0,
                                   ),
                                   onPressed: () {
                                     //路由返回
@@ -549,7 +563,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 17.0),
+                                                  fontSize: 15.0),
                                             );
                                           })
                                         : Text(
@@ -767,8 +781,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                   //重新载入数据后自动播放
                   // print(info);
                   var hostNmae = 'http://47.103.223.248:8080/YIedu/';
-                  player.setDataSource(
-                      hostNmae + widget.videoUrl,
+                  player.setDataSource(hostNmae + widget.videoUrl,
                       autoPlay: true);
                 }).catchError((err) {
                   print('载入出错...');
