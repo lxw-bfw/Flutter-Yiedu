@@ -7,8 +7,8 @@ ps：边开发边学习，功能仍在完善当中...
 
 ### flutter app简单架构考虑
 #### 1. 简述
-> 考虑到后台接口json数据 -> dart model; <br/> 全局数据配置文件；<br/> 共享状态数据配置文件 <br/> 数据持久化实现 <br/> 全局错误捕获和上传日志  
-> app页面架构，页面Widget，复用Widget，跨组件共享的State类
+> 部分后台接口json数据 转 dart model格式; <br/> 全局变量配置文件；<br/> 共享状态数据配置文件； <br/> 数据持久化实现； <br/> 全局错误捕获和上传日志；  
+> app页面架构：页面Widget，封装复用功能Widget，封装跨组件共享的State类
 
 #### 2. 页面管理
    页面架构:
@@ -16,7 +16,7 @@ ps：边开发边学习，功能仍在完善当中...
    - 四个Tabview页面；首页、分类页、我的学习、个人中心，存储与TabView文件夹
    - 其他独立页面，包括启动页面、登录注册相关页面、其他功能页面
    - 页面Widget封装、复用:存储在Widget文件夹
-   - 页面路由跳转
+   - 页面路由跳转：使用官方提供的api
 <br/>
 
 #### 3. 数据管理相关
@@ -154,14 +154,35 @@ FlutterError.onError = (FlutterErrorDetails details) {
 
 }
 ```
+
+## 功能模块和设计相关
+
+### 功能模块
+> 主模块分为首页、分类、订单支付、视频详情、视频课程播放、个人中心、课程搜索和展示
+
+### 功能设计和实现
+ - 在基础框架搭建完毕的基础上实现页面和数据交互等相关业务逻辑
+ - 部分说明如下
+ > 1. 使用 Flutter 基本语法进行布局，并封装了一系列通用的组件，比如 商品列表box、图文布局box，通用列表组件、星级点赞组件、加载状态组件，等，便于全局复用
+ >2. 搜索课程展示，使用SliverAppBar，增加交互动效，提高用户体验。
+ >3. 扩展列表组件，结合 NotificationManager 实现上拉加载更多数据，下拉刷新数据。
+ > 4. 使用 staggered_grid_view、ListView 组件展示图文列表。
+ > 5. 使用 Provider 状态管理，实现部分数据state统一管理，跨多个页面共享状态，响应式触发ui更新。如用户退出登录，触发多个使用登录状态的页面ui发生改变。
+ > 6. 使用`image_picker`实现从相册选择图片和使用相机拍照
+ > 7. 使用`flutter_alipay`实现唤起手机端支付宝支付
+ > 8. 使用`fijkplayer`自定义视频播放ui界面以及视频播放功能。
     
 
 ## 简单记录flutter开发经验
 ### 开发环境
-> vscode 开发、调试、打包flutter，hot load模式，便于开发调试
+> 在vscode下进行开发和调试，使用vscode调试工具开启hot load模式，便于保存试试更新方便调试
 
-### flutter本身；构建页面的Widget + 数据状态
+### flutter本身理解：构建页面的Widget + 数据状态
 > 无状态Widget无需数据交互，带状态的Widge需要数据交互等相关业务逻辑，数据驱动不同Widget构建的ui进行更新
+### flutter组件化、模块化思维：
+> 封装通用组件复用，创建代码模板提高开发效率
+### flutter社区：
+> flutter官方以及第三方提供不少开源的精美ui组件和相关的功能pub包如状态管理的Provider，网络请求的dio，支付宝支付flutter_alipay等等。
 ### 标签
 `flutter组件Widget——局部组件的、构建功能组件的、构建完整页面脚手架等到`、`flutter使用Widget实现布局`、`flutter异步`、`flutter状态共享`、`flutter 数据持久化`
 
