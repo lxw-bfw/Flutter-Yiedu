@@ -98,6 +98,8 @@ class Global {
 
  // 持久化用户信息:任何修改用户行为后台保存成功后获取到返回信息后就要持久化用户信息。
  static saveUser () => _prefs.setString('user', jsonEncode(user.toJson()));
+//  删除持久化的用户信息：退出登录等地方需要使用
+ static clearUser () => _prefs.remove('user');
 
 }
 

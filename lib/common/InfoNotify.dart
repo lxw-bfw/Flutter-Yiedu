@@ -23,7 +23,8 @@ class UserModel with ChangeNotifier {
    //!修改用户信息，触发重新更新wiget，修改user单例里面的所有字段。就要触发更新和数据持久化
    void changeUserInfo(User user){
       Global.user = user;
-      // Global.saveUser();
+      // 每次更新用户信息成功后，调用下面的持久化用户信息，下次进入app维持维护登录状态相关信息
+      Global.saveUser();
       _user = user;
       notifyListeners();
    }

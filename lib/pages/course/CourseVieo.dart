@@ -23,7 +23,7 @@ class CourseVideo extends StatefulWidget {
   _CourseVideoState createState() => _CourseVideoState();
 }
 
-class _CourseVideoState extends State<CourseVideo> {
+class _CourseVideoState extends State<CourseVideo>  {
   final FijkPlayer player = FijkPlayer();
   int _selectIndex = 0;
   var videoInfoMap;
@@ -37,7 +37,7 @@ class _CourseVideoState extends State<CourseVideo> {
     print(videoInfoMap.length);
     //初始化换取课程、视频相关数据
     print(widget.url);
-    var hostNmae = 'http://10.0.2.2:8088/';
+    var hostNmae = 'http://47.103.223.248:8080/YIedu/';
     player.setDataSource(hostNmae + widget.url, autoPlay: true);
   }
 
@@ -108,7 +108,7 @@ class _CourseVideoState extends State<CourseVideo> {
                             },
                             child: Icon(
                               Icons.book,
-                              size: 10.0,
+                              size: 18.0,
                             ),
                           )),
                       Tab(
@@ -122,7 +122,7 @@ class _CourseVideoState extends State<CourseVideo> {
                             },
                             child: Icon(
                               Icons.book,
-                              size: 10.0,
+                              size: 18.0,
                             ),
                           )),
                       Tab(
@@ -136,7 +136,7 @@ class _CourseVideoState extends State<CourseVideo> {
                             },
                             child: Icon(
                               Icons.book,
-                              size: 10.0,
+                              size: 18.0,
                             ),
                           ))
                     ],
@@ -171,9 +171,9 @@ class _CourseVideoState extends State<CourseVideo> {
             videoModel.changeTitle(videoInfoMap[index - 1]['title']);
             //更换新的视频播放
             //todo:
-            var hostNmae = 'http://10.0.2.2:8088/';
+            var hostNmae = 'http://47.103.223.248:8080/YIedu/';
             player.reset().then((info) {
-              player.setDataSource(hostNmae + vurl, autoPlay: true);
+              player.setDataSource(hostNmae + widget.url, autoPlay: true);
             }).catchError((err) {
               print('载入出错...');
             });
@@ -248,8 +248,12 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
   //课程视频播放相关
   int currentVideoIndex = 0; //当前播放视频的索引
 
+  //是否使用provide进行状态的更新，由于全屏模式下自定义视频播放ui重新刷新，报找不到顶层组件的widget provider
+  bool isUserProvider = true;
+
   @override
   void initState() {
+    print('看看我有没有重新刷新');
     super.initState();
     widget.player.addListener(_playerValueChanged);
     //使用api的stream方法，来监听视频频繁变化的信息：播放位置，缓冲状况
@@ -334,6 +338,7 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
       case FijkState.paused:
         //重置视频reset
         setState(() {
+          isUserProvider = true;
           _playing = false;
           _isError = false;
           _isComplete = false;
@@ -410,8 +415,10 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                     print('${player.value.fullScreen}---播放模式');
                                     if (!player.value.fullScreen) {
                                       _isScreen = false;
+                                      isUserProvider = true;
                                     } else {
                                       _isScreen = true;
+                                      isUserProvider = false;
                                     }
                                   });
                                 },
@@ -489,6 +496,9 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                     widget.player.exitFullScreen();
                                   } else {
                                     //进入全屏
+                                    setState(() {
+                                     isUserProvider = false; 
+                                    });
                                     player.pause();
                                     player.enterFullScreen();
                                   }
@@ -523,21 +533,34 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                                 Padding(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 0.0, horizontal: 0.0),
-                                    child: Consumer<VideoInfoProfider>(
-                                        builder: (_, videoModel, __) {
-                                      return Text(
-                                        widget.videoInfos.length == 0
-                                            ? '暂无视频' : videoModel.title == '视频状态管理'?
-                                            widget.videoInfos[
-                                                currentVideoIndex]['title'] : videoModel.title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 17.0),
-                                      );
-                                    })),
+                                    child: isUserProvider
+                                        ? Consumer<VideoInfoProfider>(
+                                            builder: (_, videoModel, __) {
+                                            return Text(
+                                              widget.videoInfos.length == 0
+                                                  ? '暂无视频'
+                                                  : videoModel.title == '视频状态管理'
+                                                      ? widget.videoInfos[
+                                                              currentVideoIndex]
+                                                          ['title']
+                                                      : videoModel.title,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 17.0),
+                                            );
+                                          })
+                                        : Text(
+                                            '全屏播放中',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 17.0),
+                                          )),
                               ],
                             ),
                           ),
@@ -743,7 +766,10 @@ class _CustomFijkPanelState extends State<CustomFijkPanel> {
                 player.reset().then((info) {
                   //重新载入数据后自动播放
                   // print(info);
-                  player.setDataSource('http://10.0.2.2:8088/'+ widget.videoUrl, autoPlay: true);
+                  var hostNmae = 'http://47.103.223.248:8080/YIedu/';
+                  player.setDataSource(
+                      hostNmae + widget.videoUrl,
+                      autoPlay: true);
                 }).catchError((err) {
                   print('载入出错...');
                 });

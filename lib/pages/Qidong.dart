@@ -21,9 +21,11 @@ class QidongState extends State<Qidong> {
     // TODO: implement initState
     super.initState();
     Future.delayed(Duration(seconds: 2),(){
-       Navigator.push(context, MaterialPageRoute(builder: (context) {
-       return FramePage();
-       }));
+      Navigator.pushAndRemoveUntil(
+        context,
+        new MaterialPageRoute(builder: (context) => new FramePage()),
+        (route) => route == null,
+      );
        //如果需要接收页面返p回参数
        //onPressed: () async {
        // 打开TipRoute，并等待返回结构,

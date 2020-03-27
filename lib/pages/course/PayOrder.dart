@@ -6,6 +6,7 @@ import 'package:projectpractice/common/Http.dart';
 import 'package:projectpractice/widget/Goodsbox.dart';
 import 'package:projectpractice/widget/RatingBar.dart';
 import 'package:projectpractice/pages/course/CourseVieo.dart';
+import 'package:flutter_alipay/flutter_alipay.dart';
 //确认订单页面
 
 class PayOrder extends StatefulWidget {
@@ -21,7 +22,7 @@ class PayOrder extends StatefulWidget {
 
 class _PayOrderState extends State<PayOrder> {
   //表示当前选中的单选框：微信、支付宝、京东
-  String payType = '微信';
+  String payType = '支付宝';
 
   //保存scaffold状态实例：实现nav提示
   var _scaffoldkey = new GlobalKey<ScaffoldState>();
@@ -291,9 +292,9 @@ class _PayOrderState extends State<PayOrder> {
                                       groupValue: payType,
                                       activeColor: Colors.green,
                                       onChanged: (value) {
-                                        //由于目前仅仅支持微信支付，所以点击后不改变支付状态，
-                                        //给用户一个提示
-                                        showSnackBar('抱歉，目前仅支持微信支付');
+                                        setState(() {
+                                          payType = value;
+                                        });
                                       },
                                     )
                                   ],
@@ -330,9 +331,9 @@ class _PayOrderState extends State<PayOrder> {
                                       groupValue: payType,
                                       activeColor: Colors.green,
                                       onChanged: (value) {
-                                        setState(() {
-                                          payType = value;
-                                        });
+                                        //由于目前仅仅支持支付宝支付，所以点击后不改变支付状态，
+                                        //给用户一个提示
+                                        showSnackBar('抱歉，目前仅支持支付宝支付');
                                       },
                                     )
                                   ],
@@ -371,7 +372,7 @@ class _PayOrderState extends State<PayOrder> {
                                       onChanged: (value) {
                                         //由于目前仅仅支持微信支付，所以点击后不改变支付状态，
                                         //给用户一个提示
-                                        showSnackBar('抱歉，目前仅支持微信支付');
+                                        showSnackBar('抱歉，目前仅支持支付宝支付');
                                       },
                                     )
                                   ],
@@ -425,8 +426,11 @@ class _PayOrderState extends State<PayOrder> {
                             ]), //背景渐变
                           ),
                           child: GestureDetector(
-                            onTap: () {
-                              //点击跳转微信支付
+                            onTap: () async {
+                              //点击跳转支付宝支付
+                              var result = await FlutterAlipay.pay(
+                                  "you pay info from server");
+                              showSnackBar('支付失败:没有支付订单生成，缺失信息');
                               //TODO:暂时做成，支付成功后，在这里根据cid获取到课程的视频这样
 
                               //点击提交支付信息获取到后台返沪的订单信息后调用支付宝支付

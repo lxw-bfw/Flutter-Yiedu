@@ -294,7 +294,16 @@ class _PersonPageState extends State<PersonPage>
                 alignment: Alignment.center,
                 child: GestureDetector(
                   onTap: () {
-                    //退出登录
+                    // 根据用户登录状判断--退出登录还是登录
+                    if (userModel.isLogin) {
+                      // 退出登录，调用封装的全局静态方法清除持久化的用户信息
+                      Global.clearUser();
+                      // 使用provide更新状态，通知其他页面
+                      User user1 = Global.user;
+                      user1.userInfo = null;
+                      userModel.changeUserInfo(user1);
+
+                    } 
                     Navigator.push(context,
                         MaterialPageRoute(builder: (context) {
                       return LoginIndex();

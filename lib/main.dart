@@ -95,6 +95,8 @@ class _FramePageState extends State<FramePage>
         child: Offstage(
           offstage: _selectIndex == 2 || _selectIndex == 3 ? true : false,
           child: AppBar(
+            //tabView页面级别的设置不自动显示左上角的返回按钮
+            automaticallyImplyLeading: false,
             //搜索框
             title: GestureDetector(
               onTap: () {
